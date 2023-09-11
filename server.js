@@ -112,7 +112,7 @@ app.get('/questions', async (req, res) => {
 
 app.get('/images', (req, res) => {
     const imageFiles = fs.readdirSync('./public/uploads/');
-    let currentIndex = req.session.currentIndex || 1;
+    let currentIndex = req.session.currentIndex || 0;
 
     currentIndex = (currentIndex + imageFiles.length) % imageFiles.length;
 

@@ -11,8 +11,8 @@
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-8">
-                <h1 id="questionTitle">Question Title</h1>
-                <img src="/uploads/image<%= currentIndex %>.jpg" alt="Image" class="img-fluid mb-3">
+                <h5 id="questionTitle">Question Title</h5>
+                <img src="/uploads/image<%= currentIndex +1 %>.jpg" alt="Image" class="img-fluid mb-3">
                 <div id="optionsContainer" class="row"></div>
             </div>
             <div class="col-md-4">
@@ -25,6 +25,7 @@
                 <button id="submitButton" class="btn btn-primary" style="display: none;">Submit</button>
             </div>
         </div>
+
     </div>
 
 
@@ -33,7 +34,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
     <script>
-        const totalImages = <%= images.length + 1 %>;
+        const totalImages = <%= images.length %>;
         let currentIndex = <%= currentIndex %>;
         let selectedOptions = [];
         let questions = [];
@@ -45,7 +46,8 @@
 
         function updateImage() {
             const image = document.querySelector('img');
-            image.src = '/uploads/image' + currentIndex + '.jpg';
+            const imageNumber = currentIndex + 1;
+            image.src = `/uploads/image${imageNumber}.jpg`;
         }
 
         async function fetchQuestions() {
@@ -64,7 +66,6 @@
 
         fetchQuestions();
 
-
         nextButton.addEventListener('click', (event) => {
             event.preventDefault();
             currentIndex = (currentIndex + 1) % totalImages;
@@ -72,7 +73,6 @@
             fetchAndDisplayQuestions();
             updateImage();
         });
-
 
         previousButton.addEventListener('click', (event) => {
             event.preventDefault();
@@ -82,20 +82,45 @@
             updateImage();
         });
 
+        const optionInputs = optionsContainer.querySelectorAll('input[name="option"]');
+
+        optionInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                selectedOptions = []; // Clear the selected options array
+
+                optionInputs.forEach(optionInput => {
+                    if (optionInput.checked) {
+                        selectedOptions.push(optionInput.value); // Add selected options to the array
+                    }
+                });
+
+                // Update the next button state
+                updateNextButtonState();
+            });
+        });
+
 
         submitButton.addEventListener('click', () => {
             if (questions.length > 0) {
+                const responses = {
+                    candidateResponses: selectedOptions, // Save selected options
+                    currentIndex: currentIndex, // Save the current question index
+                };
+
                 const lastQuestionIndex = questions.length - 1;
                 const answeredAllQuestions = selectedOptions.length > 0 || currentIndex === lastQuestionIndex;
-                if (answeredAllQuestions) {
-                    console.log('Selected Options:', selectedOptions);
 
+                if (answeredAllQuestions) {
+                    console.log('Candidate Responses:', responses);
+                    // sending responses on the server code should be here
+
+
+                    //window.location.href = 'views\thankyou.html';
                 } else {
                     alert('Please answer all questions before submitting.');
                 }
             }
         });
-
 
 
         function fetchAndDisplayQuestions() {
@@ -127,42 +152,24 @@
                     optionsContainer.appendChild(optionElement);
                 });
 
-                if (currentIndex === totalImages - 1) {
-                    submitButton.style.display = 'block';
-                } else {
-                    submitButton.style.display = 'none';
-                }
 
-                const optionInputs = optionsContainer.querySelectorAll('input[name="option"]');
-
-                optionInputs.forEach(input => {
-                    input.addEventListener('change', () => {
-                        selectedOptions = [];
-                        optionInputs.forEach(optionInput => {
-                            if (optionInput.checked) {
-                                selectedOptions.push(optionInput.value);
-                            }
-                        });
-
-                        if (selectedOptions.length > 0 && currentIndex === totalImages - 1) {
-                            submitButton.style.display = 'block';
-                        } else {
-                            submitButton.style.display = 'none';
-                        }
-                    });
-                });
-
+                updateNextButtonState();
             }
         }
 
-
-
-
+        function updateNextButtonState() {
+            if (currentIndex === totalImages - 1) {
+                nextButton.disabled = true;
+                submitButton.style.display = 'block';
+            } else {
+                nextButton.disabled = false;
+                submitButton.style.display = 'none';
+            }
+        }
 
         function startTimer() {
             let startTime = localStorage.getItem('startTime');
             if (!startTime) {
-
                 startTime = new Date().getTime();
                 localStorage.setItem('startTime', startTime);
             }
@@ -180,23 +187,18 @@
                 timerElement.textContent = `Timer: ${minutes}:${seconds.toString().padStart(2, '0')}`;
 
                 if (remainingSeconds <= 0) {
-
                     clearInterval(timerInterval);
                     timerElement.textContent = 'Timer: 0:00';
-
                 }
             }
 
-
             const timerInterval = setInterval(updateTimer, 1000);
-
             updateTimer();
         }
 
         window.addEventListener('load', () => {
             startTimer();
         });
-
 
         fetchAndDisplayQuestions();
     </script>
