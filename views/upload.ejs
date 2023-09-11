@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Question Creator</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h3 class="text-center">Question Creator</h3>
+                <form id="question-form" enctype="multipart/form-data">
+
+                    <div class="form-group">
+
+                        <textarea type="text" class="form-control" placeholder="Question Title" id="question-title"
+                            name="questionTitle" required></textarea>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="question-description">Description<i>(Note: it will not visible to the
+                                candidate)</i></label>
+                        <textarea class="form-control" id="question-description" name="questionDescription"></textarea>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="question-image" class="btn btn-primary btn-block btn-outlined">Upload Question
+                            Image</label>
+                        <input type="file" class="form-control-file" id="question-image" name="image" accept="image/*"
+                            style="display: none;">
+
+                    </div>
+
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Question Type:</label>
+                        <div class="col-sm-auto">
+                            <div class="form-check form-check-inline">
+                                <input type="radio" class="form-check-input" id="multichoice" name="questionType"
+                                    value="multichoice">
+                                <label class="form-check-label" for="multichoice">Multichoice</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input type="radio" class="form-check-input" id="singlechoice" name="questionType"
+                                    value="singlechoice">
+                                <label class="form-check-label" for="singlechoice">Single Choice</label>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div id="options-container">
+                        <div class="option">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">Option 1:</label>
+                                <div class="col-sm-7">
+                                    <input type="text" class="form-control" name="option-1" required>
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="isCorrect-1" value="true">
+                                        <label class="form-check-label" for="isCorrect-1">Is Correct</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="add-option">Add Option</button>
+
+
+                    <button type="button" class="btn btn-success" id="save-button">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('add-option').addEventListener('click', () => {
+            const optionsContainer = document.getElementById('options-container');
+            const optionDiv = document.createElement('div');
+            optionDiv.classList.add('option');
+
+            const optionNumber = optionsContainer.childElementCount + 1;
+            optionDiv.innerHTML = `
+        <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Option ${optionNumber}:</label>
+            <div class="col-sm-7">
+                <input type="text" class="form-control" name="option-${optionNumber}" required>
+            </div>
+            <div class="col-sm-2">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="isCorrect-${optionNumber}" value="true">
+                    <label class="form-check-label" for="isCorrect-${optionNumber}">Is Correct</label>
+                </div>
+            </div>
+        </div>
+    `;
+
+            optionsContainer.appendChild(optionDiv);
+        });
+
+        document.getElementById('save-button').addEventListener('click', () => {
+            const form = document.getElementById('question-form');
+            const formData = new FormData(form);
+            const questionData = {};
+
+            questionData.options = [];
+
+
+            const maxOptions = 4;
+
+            for (let i = 1; i <= maxOptions; i++) {
+                const optionText = formData.get(`option-${i}`);
+                if (optionText) {
+                    const isCorrectFlag = formData.get(`isCorrect-${i}`) === 'true';
+                    questionData.options.push({
+                        text: optionText,
+                        isCorrect: isCorrectFlag,
+                    });
+                }
+            }
+
+            questionData.questionTitle = formData.get('questionTitle');
+            questionData.questionDescription = formData.get('questionDescription');
+            questionData.questionType = formData.get('questionType');
+
+
+            const combinedFormData = new FormData();
+
+
+            combinedFormData.append('questionData', JSON.stringify(questionData));
+
+
+            combinedFormData.append('image', formData.get('image'));
+
+
+            fetch('http://localhost:3000/upload', {
+                method: 'POST',
+                body: combinedFormData,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Question created successfully!');
+                        form.reset();
+                    } else {
+                        alert('Error creating the question.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while creating the question.');
+                });
+        });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+
+</html>

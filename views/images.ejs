@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Questions Page</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 id="questionTitle">Question Title</h1>
+                <img src="/uploads/image<%= currentIndex %>.jpg" alt="Image" class="img-fluid mb-3">
+                <div id="optionsContainer" class="row"></div>
+            </div>
+            <div class="col-md-4">
+                <h6>Remaining Time</h6>
+                <p id="timer">Timer: 0 seconds</p>
+                <form id="nextForm" action="http://localhost:3000/next" method="POST">
+                    <button type="submit" id="nextButton" class="btn btn-primary mb-2">Next</button>
+                </form>
+                <button id="previousButton" class="btn btn-secondary mb-2">Previous</button>
+                <button id="submitButton" class="btn btn-primary" style="display: none;">Submit</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        const totalImages = <%= images.length + 1 %>;
+        let currentIndex = <%= currentIndex %>;
+        let selectedOptions = [];
+        let questions = [];
+        const nextButton = document.getElementById('nextButton');
+        const previousButton = document.getElementById('previousButton');
+        const submitButton = document.getElementById('submitButton');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const questionTitle = document.getElementById('questionTitle');
+
+        function updateImage() {
+            const image = document.querySelector('img');
+            image.src = '/uploads/image' + currentIndex + '.jpg';
+        }
+
+        async function fetchQuestions() {
+            try {
+                const response = await fetch('http://localhost:3000/questions');
+                const data = await response.json();
+
+                if (data.success) {
+                    questions = data.questions;
+                    fetchAndDisplayQuestions();
+                }
+            } catch (error) {
+                console.error('Error fetching questions:', error);
+            }
+        }
+
+        fetchQuestions();
+
+
+        nextButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            currentIndex = (currentIndex + 1) % totalImages;
+            selectedOptions = [];
+            fetchAndDisplayQuestions();
+            updateImage();
+        });
+
+
+        previousButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            currentIndex = (currentIndex - 1 + totalImages) % totalImages;
+            selectedOptions = [];
+            fetchAndDisplayQuestions();
+            updateImage();
+        });
+
+
+        submitButton.addEventListener('click', () => {
+            if (questions.length > 0) {
+                const lastQuestionIndex = questions.length - 1;
+                const answeredAllQuestions = selectedOptions.length > 0 || currentIndex === lastQuestionIndex;
+                if (answeredAllQuestions) {
+                    console.log('Selected Options:', selectedOptions);
+
+                } else {
+                    alert('Please answer all questions before submitting.');
+                }
+            }
+        });
+
+
+
+        function fetchAndDisplayQuestions() {
+            if (questions.length > 0) {
+                const question = questions[currentIndex];
+                questionTitle.textContent = question.questionTitle;
+                optionsContainer.innerHTML = '';
+
+                question.options.forEach(option => {
+                    const optionElement = document.createElement('div');
+                    optionElement.classList.add('col-md-6');
+
+                    if (question.questionType === 'multichoice') {
+                        optionElement.innerHTML = `
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="option" value="${option.text}">
+                <label class="form-check-label">${option.text}</label>
+            </div>
+        `;
+                    } else if (question.questionType === 'singlechoice') {
+                        optionElement.innerHTML = `
+            <div class="form-check">
+                <input type="radio" class="form-check-input" name="option" value="${option.text}">
+                <label class="form-check-label">${option.text}</label>
+            </div>
+        `;
+                    }
+
+                    optionsContainer.appendChild(optionElement);
+                });
+
+                if (currentIndex === totalImages - 1) {
+                    submitButton.style.display = 'block';
+                } else {
+                    submitButton.style.display = 'none';
+                }
+
+                const optionInputs = optionsContainer.querySelectorAll('input[name="option"]');
+
+                optionInputs.forEach(input => {
+                    input.addEventListener('change', () => {
+                        selectedOptions = [];
+                        optionInputs.forEach(optionInput => {
+                            if (optionInput.checked) {
+                                selectedOptions.push(optionInput.value);
+                            }
+                        });
+
+                        if (selectedOptions.length > 0 && currentIndex === totalImages - 1) {
+                            submitButton.style.display = 'block';
+                        } else {
+                            submitButton.style.display = 'none';
+                        }
+                    });
+                });
+
+            }
+        }
+
+
+
+
+
+        function startTimer() {
+            let startTime = localStorage.getItem('startTime');
+            if (!startTime) {
+
+                startTime = new Date().getTime();
+                localStorage.setItem('startTime', startTime);
+            }
+
+            const timerElement = document.getElementById('timer');
+
+            function updateTimer() {
+                const currentTime = new Date().getTime();
+                const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
+                const remainingSeconds = Math.max(1800 - elapsedSeconds, 0);
+
+                const minutes = Math.floor(remainingSeconds / 60);
+                const seconds = remainingSeconds % 60;
+
+                timerElement.textContent = `Timer: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                if (remainingSeconds <= 0) {
+
+                    clearInterval(timerInterval);
+                    timerElement.textContent = 'Timer: 0:00';
+
+                }
+            }
+
+
+            const timerInterval = setInterval(updateTimer, 1000);
+
+            updateTimer();
+        }
+
+        window.addEventListener('load', () => {
+            startTimer();
+        });
+
+
+        fetchAndDisplayQuestions();
+    </script>
+</body>
+
+</html>
