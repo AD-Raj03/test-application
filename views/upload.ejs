@@ -11,15 +11,17 @@
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <h3 class="text-center">Question Creator</h3>
+                <button type="button" class="btn btn-primary mb-2 " id="questions-list-button">Questions List</button>
+
                 <form id="question-form" enctype="multipart/form-data">
                     <div class="form-group">
                         <textarea type="text" class="form-control" placeholder="Question Title" id="question-title"
-                            name="questionTitle" required></textarea>
+                            name="questionTitle" rows="1" required></textarea>
                     </div>
                     <div class="form-group">
                         <label for="question-description">Description<i>(Note: it will not be visible to the
                                 candidate)</i></label>
-                        <textarea class="form-control" id="question-description" name="questionDescription"></textarea>
+                        <textarea class="form-control" id="question-description" name="questionDescription" rows="1"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="question-tags">Tags<i>(Note:Tags should be -> JAVA, AWS, SPRING etc.)</i></label>
@@ -29,7 +31,7 @@
                         <label for="question-image" class="btn btn-primary btn-block btn-outlined">Upload Question
                             Image</label>
                         <input type="file" class="form-control-file" id="question-image" name="image" accept="image/*"
-                            style="display: none;">
+                            style="display: none;" required>
                     </div>
                     <div class="form-group row">
                         <label class="col-sm-3 col-form-label">Question Type:</label>
@@ -60,6 +62,7 @@
                                     </div>
                                 </div>
                             </div>
+                            
                         </div>
                     </div>
                     <button type="button" class="btn btn-primary" id="add-option">Add Option</button>
@@ -70,6 +73,12 @@
     </div>
 
     <script>
+
+        document.getElementById('questions-list-button').addEventListener('click', () => {
+
+            window.location.href = '/questions-list';
+        });
+
         document.getElementById('add-option').addEventListener('click', () => {
             const optionsContainer = document.getElementById('options-container');
             const optionCount = optionsContainer.querySelectorAll('.option').length;
@@ -106,7 +115,7 @@
             const optionsContainer = document.getElementById('options-container');
             const optionCount = optionsContainer.querySelectorAll('.option').length;
 
-            
+
             if (optionCount < 2) {
                 alert('You must have at least 2 options.');
                 return;
@@ -139,6 +148,12 @@
             const combinedFormData = new FormData();
 
             combinedFormData.append('questionData', JSON.stringify(questionData));
+
+            const imageInput = document.getElementById('question-image');
+            if (imageInput.files.length === 0) {
+                alert('Please select an image.');
+                return;
+            }
             combinedFormData.append('image', formData.get('image'));
 
             fetch('http://localhost:3000/upload', {
@@ -150,7 +165,8 @@
                     if (data.success) {
                         alert('Question created successfully!');
                         form.reset();
-                        optionsContainer.innerHTML = ''; 
+                        window.location.reload();
+                        optionsContainer.innerHTML = '';
                     } else {
                         alert('Error creating the question.');
                     }

@@ -58,20 +58,20 @@ app.get("/login", (req, res) => {
     res.render("login");
 });
 
-// Display the login form
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
     res.render("candidatelogin");
 });
 
 const questionSchema = new mongoose.Schema({
     questionId: {
         type: Number,
-        default: 1000, 
-        unique: true, 
+        default: 1000,
+        unique: true,
     },
     questionTitle: String,
     questionDescription: String,
     image: String,
+    correctOptions:[String],
     questionType: String,
     questionTags: String,
     options: [
@@ -87,114 +87,101 @@ const Question = mongoose.model("Question", questionSchema);
 const user = new mongoose.Schema({
     username: String,
     password: String,
-})
+});
 
 const User = mongoose.model("User", user);
 
 const responseSchema = new mongoose.Schema({
-    questionIndex: Number,
-    responses: [String],
+    emailId: String,
     timestamp: Date,
-  });
+    responses: [
+        {
+            questionId: Number,
+            selectedOptions: [String],
+        },
+    ],
+});
 
-  const Response = mongoose.model('Response', responseSchema);
+const Response = mongoose.model("Response", responseSchema);
 
-  
 const candidateSchema = new mongoose.Schema({
     email: String,
     securityCode: Number,
-   
 });
 
-const Candidate = mongoose.model('Candidate', candidateSchema);
+const Candidate = mongoose.model("Candidate", candidateSchema);
 
-
-app.post('/candidates', async (req, res) => {
+app.post("/candidates", async (req, res) => {
     try {
-      const { email, securityCode } = req.body;
-  
-     
-      const candidate = new Candidate({
-        email,
-        securityCode,
-      });
-  
-      await candidate.save();
-  
-      res.status(201).json({ success: true, message: 'Candidate data saved successfully' });
+        const { email, securityCode } = req.body;
+
+        const candidate = new Candidate({
+            email,
+            securityCode,
+        });
+
+        await candidate.save();
+
+        res
+            .status(201)
+            .json({ success: true, message: "Candidate data saved successfully" });
     } catch (error) {
-      console.error('Error saving candidate data:', error);
-      res.status(500).json({ success: false, message: 'Internal server error' });
+        console.error("Error saving candidate data:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
-  });
-  
+});
 
-app.post('/candidate-login', async (req, res) => {
+app.post("/candidate-login", async (req, res) => {
     const { email, securityCode } = req.body;
-    console.log(email, securityCode)
+    console.log(email, securityCode);
 
     try {
-       
         const candidate = await Candidate.findOne({ email, securityCode });
 
         if (candidate) {
-            
-            res.redirect('/images');      
+            res.redirect("/images");
         } else {
-            
-            res.status(400).json({ success: false, message: 'Invalid data' });
+            res.status(400).json({ success: false, message: "Invalid data" });
         }
     } catch (error) {
-        console.error('Error:', error);
-        res.status(500).send('Internal Server Error');
+        console.error("Error:", error);
+        res.status(500).send("Internal Server Error");
     }
 });
 
+app.post("/testmaster/api/save-response", async (req, res) => {
+    const { emailId, timestamp, responses } = req.body;
 
-  app.post('/save-response', async (req, res) => {
-    const { questionIndex, responses: selectedOptions } = req.body;
+    const responseDocument = new Response({
+        emailId,
+        timestamp,
+        responses,
+    });
 
-    if (typeof questionIndex === 'number' && Array.isArray(selectedOptions)) {
-        const responseDocument = new Response({
-            questionIndex,
-            responses: selectedOptions,
-            timestamp: new Date(),
-        });
-
-        try {
-            await responseDocument.save();
-            res.status(200).json({ success: true, response: responseDocument });
-        } catch (error) {
-            console.error('Error saving response:', error);
-            res.status(500).json({ success: false, message: 'Internal server error' });
-        }
-    } else {
-        res.status(400).json({ success: false, message: 'Invalid data' });
+    try {
+        await responseDocument.save();
+        res.status(200).json({ success: true, response: responseDocument });
+    } catch (error) {
+        console.error("Error saving response:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
     }
 });
 
-
-app.get('/thank-you', (req, res) => {
-    
+app.get("/thank-you", (req, res) => {
     if (req.session.thankYouShown) {
-       
-        return  res.render('thank-you');
+        return res.render("thank-you");
     }
     req.session.thankYouShown = true;
-    res.render('thank-you'); 
+    res.render("thank-you");
 });
-
-
 
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
 
-
     const user = await User.findOne({ username, password });
 
     if (user) {
-       
-        res.render('upload');
+        res.render("upload");
     } else {
         res
             .status(401)
@@ -208,20 +195,26 @@ app.post("/upload", upload.single("image"), async (req, res) => {
     const imageFileName = req.file.filename;
 
     const latestQuestion = await Question.findOne().sort({ questionId: -1 });
-        let newQuestionId = 1000; 
+    let newQuestionId = 1000;
 
-        if (latestQuestion) {
-            newQuestionId = latestQuestion.questionId + 1;
-        }
-
+    if (latestQuestion) {
+        newQuestionId = latestQuestion.questionId + 1;
+    }
 
     const options = [];
+    const correctOptions = []
+    questionData.options.forEach(option => {
+        if (option.isCorrect) {
+            correctOptions.push(option.text);
+        }
+    });
     options.push(questionData.options);
 
     const newQuestion = new Question({
         questionId: newQuestionId,
         questionTitle: questionData.questionTitle,
         questionDescription: questionData.questionDescription,
+        correctOptions: correctOptions,
         image: imageFileName,
         questionType: questionData.questionType,
         questionTags: questionData.questionTags,
@@ -239,16 +232,55 @@ app.post("/upload", upload.single("image"), async (req, res) => {
     }
 });
 
-app.get("/questions", async (req, res) => {
+app.get("/questions-list", async (req, res) => {
     try {
         const questions = await Question.find();
-        res.render('questions', { questions });
-       // res.status(200).json({ success: true, questions: questions });
+        res.render("questions", { questions });
     } catch (error) {
         console.error("Error fetching questions:", error);
         res
             .status(500)
             .json({ success: false, message: "Error fetching questions" });
+    }
+});
+
+app.get("/questions", async (req, res) => {
+    try {
+        const questions = await Question.find();
+
+        res.status(200).json({ success: true, questions: questions });
+    } catch (error) {
+        console.error("Error fetching questions:", error);
+        res
+            .status(500)
+            .json({ success: false, message: "Error fetching questions" });
+    }
+});
+
+app.delete("/testmaster/api/questions/:id", async (req, res) => {
+    try {
+        const questionId = req.params.id;
+
+        const question = await Question.findById(questionId);
+
+        if (!question) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Question not found" });
+        }
+
+        const imageFileName = question.image;
+        const imagePath = path.join(__dirname, "public", "uploads", imageFileName);
+
+        fs.unlinkSync(imagePath);
+
+        await Question.findByIdAndDelete(questionId);
+        res.status(204).send();
+    } catch (error) {
+        console.error("Error deleting question:", error);
+        res
+            .status(500)
+            .json({ success: false, message: "Error deleting question" });
     }
 });
 

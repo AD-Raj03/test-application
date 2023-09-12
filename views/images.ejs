@@ -3,28 +3,24 @@
 
 <head>
     <title>Questions Page</title>
-
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 
 <body>
     <div class="container mt-4">
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <h5 id="questionTitle">Question Title</h5>
-                <img src="/uploads/image<%= currentIndex +1 %>.jpg" alt="Image" class="img-fluid mb-3">
+                <img src="/uploads/image<%= currentIndex + 1 %>.jpg" alt="Image" class="img-fluid mb-3">
                 <div id="optionsContainer" class="row"></div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-2">
                 <h6>Remaining Time</h6>
                 <p id="timer">Timer: 0 seconds</p>
                 <form id="nextForm" action="http://localhost:3000/next" method="POST">
-                    <!-- Set button classes for consistent size -->
                     <button type="submit" id="nextButton" class="btn btn-primary btn-block mb-2">Next</button>
                 </form>
-                <!-- Add warning class to "Previous" button and set button class for consistent size -->
                 <button id="previousButton" class="btn btn-warning btn-block mb-2">Previous</button>
-                <!-- Set button classes for consistent size and change color to red -->
                 <button id="submitButton" class="btn btn-danger btn-block" style="display: none;">Submit</button>
             </div>
         </div>
@@ -50,6 +46,8 @@
             image.src = `/uploads/image${imageNumber}.jpg`;
         }
 
+        let questionIds = [];
+
         async function fetchQuestions() {
             try {
                 const response = await fetch('http://localhost:3000/questions');
@@ -57,6 +55,7 @@
 
                 if (data.success) {
                     questions = data.questions;
+                    questionIds = questions.map(question => question.questionId);
                     fetchAndDisplayQuestions();
                 }
             } catch (error) {
@@ -66,15 +65,26 @@
 
         fetchQuestions();
 
-
-        async function sendResponseToServer(currentIndex, selectedOptions) {
+        async function sendResponsesToServer() {
             try {
-                const response = await fetch('http://localhost:3000/save-response', {
+
+                const emailId = 'algodomain@gmail.com';
+                const timestamp = new Date().toISOString();
+                const responsesArray = Object.entries(responses).map(([index, selectedOptions]) => ({
+                    questionId: questionIds[index],
+                    selectedOptions,
+                }));
+
+                const response = await fetch('http://localhost:3000/testmaster/api/save-response', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ questionIndex: currentIndex, responses: selectedOptions }),
+                    body: JSON.stringify({
+                        emailId,
+                        timestamp,
+                        responses: responsesArray
+                    }),
                 });
 
                 if (response.ok) {
@@ -89,23 +99,17 @@
 
         let responses = [];
 
-
-
         nextButton.addEventListener('click', (event) => {
             event.preventDefault();
-
 
             const selectedOptions = Array.from(document.querySelectorAll('input[name="option"]:checked'))
                 .map(input => input.value);
 
-
             responses[currentIndex] = selectedOptions;
-            console.log(responses);
 
             currentIndex = (currentIndex + 1) % totalImages;
             fetchAndDisplayQuestions();
             updateImage();
-            sendResponseToServer(currentIndex, selectedOptions);
         });
 
         previousButton.addEventListener('click', (event) => {
@@ -148,36 +152,28 @@
             }
         }
 
-        let lastQuestionResponses = null;
+
 
         submitButton.addEventListener('click', (event) => {
             event.preventDefault();
 
-
             const selectedOptions = Array.from(document.querySelectorAll('input[name="option"]:checked'))
                 .map(input => input.value);
 
-
             responses[currentIndex] = selectedOptions;
-            lastQuestionResponses = selectedOptions;
-
 
             const confirmation = confirm("Are you sure you want to submit?");
-            if (confirmation) {
 
+            if (confirmation) {
                 console.log(responses);
-                sendResponseToServer(currentIndex, selectedOptions);
-                responses = [];
+                sendResponsesToServer();
+
                 localStorage.removeItem('startTime');
                 window.location.href = '/thank-you';
-
-
             }
         });
 
         function updateNextButtonState() {
-            // console.log("currentIndex", currentIndex)
-            // console.log("totalimages",totalImages)
             if (currentIndex === totalImages - 1) {
                 nextButton.disabled = true;
                 submitButton.style.display = 'block';
