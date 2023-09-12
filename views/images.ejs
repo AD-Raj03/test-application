@@ -19,15 +19,16 @@
                 <h6>Remaining Time</h6>
                 <p id="timer">Timer: 0 seconds</p>
                 <form id="nextForm" action="http://localhost:3000/next" method="POST">
-                    <button type="submit" id="nextButton" class="btn btn-primary mb-2">Next</button>
+                    <!-- Set button classes for consistent size -->
+                    <button type="submit" id="nextButton" class="btn btn-primary btn-block mb-2">Next</button>
                 </form>
-                <button id="previousButton" class="btn btn-secondary mb-2">Previous</button>
-                <button id="submitButton" class="btn btn-primary" style="display: none;">Submit</button>
+                <!-- Add warning class to "Previous" button and set button class for consistent size -->
+                <button id="previousButton" class="btn btn-warning btn-block mb-2">Previous</button>
+                <!-- Set button classes for consistent size and change color to red -->
+                <button id="submitButton" class="btn btn-danger btn-block" style="display: none;">Submit</button>
             </div>
         </div>
-
     </div>
-
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
@@ -36,7 +37,6 @@
     <script>
         const totalImages = <%= images.length %>;
         let currentIndex = <%= currentIndex %>;
-        let selectedOptions = [];
         let questions = [];
         const nextButton = document.getElementById('nextButton');
         const previousButton = document.getElementById('previousButton');
@@ -66,62 +66,54 @@
 
         fetchQuestions();
 
+
+        async function sendResponseToServer(currentIndex, selectedOptions) {
+            try {
+                const response = await fetch('http://localhost:3000/save-response', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ questionIndex: currentIndex, responses: selectedOptions }),
+                });
+
+                if (response.ok) {
+                    console.log('Response saved');
+                } else {
+                    console.error('Error saving response');
+                }
+            } catch (error) {
+                console.error('Error sending response to the server:', error);
+            }
+        }
+
+        let responses = [];
+
+
+
         nextButton.addEventListener('click', (event) => {
             event.preventDefault();
+
+
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="option"]:checked'))
+                .map(input => input.value);
+
+
+            responses[currentIndex] = selectedOptions;
+            console.log(responses);
+
             currentIndex = (currentIndex + 1) % totalImages;
-            selectedOptions = [];
             fetchAndDisplayQuestions();
             updateImage();
+            sendResponseToServer(currentIndex, selectedOptions);
         });
 
         previousButton.addEventListener('click', (event) => {
             event.preventDefault();
             currentIndex = (currentIndex - 1 + totalImages) % totalImages;
-            selectedOptions = [];
             fetchAndDisplayQuestions();
             updateImage();
         });
-
-        const optionInputs = optionsContainer.querySelectorAll('input[name="option"]');
-
-        optionInputs.forEach(input => {
-            input.addEventListener('change', () => {
-                selectedOptions = []; // Clear the selected options array
-
-                optionInputs.forEach(optionInput => {
-                    if (optionInput.checked) {
-                        selectedOptions.push(optionInput.value); // Add selected options to the array
-                    }
-                });
-
-                // Update the next button state
-                updateNextButtonState();
-            });
-        });
-
-
-        submitButton.addEventListener('click', () => {
-            if (questions.length > 0) {
-                const responses = {
-                    candidateResponses: selectedOptions, // Save selected options
-                    currentIndex: currentIndex, // Save the current question index
-                };
-
-                const lastQuestionIndex = questions.length - 1;
-                const answeredAllQuestions = selectedOptions.length > 0 || currentIndex === lastQuestionIndex;
-
-                if (answeredAllQuestions) {
-                    console.log('Candidate Responses:', responses);
-                    // sending responses on the server code should be here
-
-
-                    //window.location.href = 'views\thankyou.html';
-                } else {
-                    alert('Please answer all questions before submitting.');
-                }
-            }
-        });
-
 
         function fetchAndDisplayQuestions() {
             if (questions.length > 0) {
@@ -152,12 +144,40 @@
                     optionsContainer.appendChild(optionElement);
                 });
 
-
                 updateNextButtonState();
             }
         }
 
+        let lastQuestionResponses = null;
+
+        submitButton.addEventListener('click', (event) => {
+            event.preventDefault();
+
+
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="option"]:checked'))
+                .map(input => input.value);
+
+
+            responses[currentIndex] = selectedOptions;
+            lastQuestionResponses = selectedOptions;
+
+
+            const confirmation = confirm("Are you sure you want to submit?");
+            if (confirmation) {
+
+                console.log(responses);
+                sendResponseToServer(currentIndex, selectedOptions);
+                responses = [];
+                localStorage.removeItem('startTime');
+                window.location.href = '/thank-you';
+
+
+            }
+        });
+
         function updateNextButtonState() {
+            // console.log("currentIndex", currentIndex)
+            // console.log("totalimages",totalImages)
             if (currentIndex === totalImages - 1) {
                 nextButton.disabled = true;
                 submitButton.style.display = 'block';

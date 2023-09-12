@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Question List</title>
+    
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Question List</h1>
+
+      
+        <div class="input-group mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search by Question Tags">
+            <div class="input-group-append">
+                <button id="searchButton" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+
+      
+        <button id="createQuestionButton" class="btn btn-success">Create Question</button>
+
+        <table class="table table-bordered mt-2 ">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Question Title</th>
+                    <th>Question Description</th>
+                    <th>Image</th>
+                    <th>Question Type</th>
+                    <th>Question Tags</th>
+                    <th>Options</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% questions.forEach((question) => { %>
+                    <tr>
+                        <td><%= question.questionTitle %></td>
+                        <td><%= question.questionDescription %></td>
+                        <td><%= question.image %></td>
+                        <td><%= question.questionType %></td>
+                        <td><%= question.questionTags %></td>
+                        <td>
+                            <ul>
+                                <% question.options.forEach((option) => { %>
+                                    <li><%= option.text %> (<%= option.isCorrect ? 'Correct' : 'Incorrect' %>)</li>
+                                <% }); %>
+                            </ul>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary">Edit</button>
+                            <button class="btn btn-danger">Delete</button>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    </div>
+
+   
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+       
+        function searchQuestions() {
+            const searchInput = document.getElementById('searchInput').value;
+            // Send an API request with the searchInput to filter questions by tags
+            // Update the table with the filtered results
+        }
+
+        
+        function createQuestion() {
+            window.location.href = '/upload';
+        }
+
+       
+        document.getElementById('searchButton').addEventListener('click', searchQuestions);
+
+       
+        document.getElementById('createQuestionButton').addEventListener('click', createQuestion);
+    </script>
+</body>
+</html>

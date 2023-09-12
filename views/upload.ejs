@@ -22,6 +22,10 @@
                         <textarea class="form-control" id="question-description" name="questionDescription"></textarea>
                     </div>
                     <div class="form-group">
+                        <label for="question-tags">Tags<i>(Note:Tags should be -> JAVA, AWS, SPRING etc.)</i></label>
+                        <input class="form-control" id="question-tags" name="questionTags"></input>
+                    </div>
+                    <div class="form-group">
                         <label for="question-image" class="btn btn-primary btn-block btn-outlined">Upload Question
                             Image</label>
                         <input type="file" class="form-control-file" id="question-image" name="image" accept="image/*"
@@ -102,7 +106,7 @@
             const optionsContainer = document.getElementById('options-container');
             const optionCount = optionsContainer.querySelectorAll('.option').length;
 
-            // Check if the minimum limit (2 options) has not been reached.
+            
             if (optionCount < 2) {
                 alert('You must have at least 2 options.');
                 return;
@@ -127,9 +131,10 @@
                 }
             }
 
-            questionData.questionTitle = formData.get('questionTitle');
-            questionData.questionDescription = formData.get('questionDescription');
+            questionData.questionTitle = formData.get('questionTitle').toUpperCase();
+            questionData.questionDescription = formData.get('questionDescription').toUpperCase();
             questionData.questionType = formData.get('questionType');
+            questionData.questionTags = formData.get('questionTags').toUpperCase();
 
             const combinedFormData = new FormData();
 
@@ -145,7 +150,7 @@
                     if (data.success) {
                         alert('Question created successfully!');
                         form.reset();
-                        optionsContainer.innerHTML = ''; // Clear added options
+                        optionsContainer.innerHTML = ''; 
                     } else {
                         alert('Error creating the question.');
                     }

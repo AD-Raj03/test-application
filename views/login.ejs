@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Form</title>
+    <!-- Bootstrap CSS from CDN -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-4">
+                <div class="text-center">
+                    <img src="public\uploads\algodomain-logo.jpg" alt="Company Logo" class="mb-4">
+                </div>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                    <div class="text-center mt-3">
+                        <a href="#" id="forgotPassword">Forgot Password?</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery and Bootstrap JS from CDNs -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        // JavaScript validation
+        $(document).ready(function () {
+            $("#loginForm").submit(function (event) {
+                event.preventDefault();
+                var username = $("#username").val();
+                var password = $("#password").val();
+
+                // Add your validation logic here (e.g., checking username and password)
+                if (username === "yourUsername" && password === "yourPassword") {
+                    alert("Login successful!");
+                    // Redirect to the desired page
+                    // window.location.href = "dashboard.html";
+                } else {
+                    alert("Invalid username or password. Please try again.");
+                }
+            });
+
+            $("#forgotPassword").click(function (event) {
+                event.preventDefault();
+                // Add logic to handle forgotten password (e.g., show a modal or redirect to a password reset page)
+                alert("Forgot Password clicked!");
+            });
+        });
+    </script>
+</body>
+</html>
