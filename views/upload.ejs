@@ -7,11 +7,34 @@
 </head>
 
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">TestMaster <sub>by Algodomain Solutions</sub></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link " href="/results">Results</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="/upload">Create Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link  " href="/questions-list">Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab4">Tab 4</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
     <div class="container mt-4">
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <h3 class="text-center">Question Creator</h3>
-                <button type="button" class="btn btn-primary mb-2 " id="questions-list-button">Questions List</button>
+                <!-- <button type="button" class="btn btn-primary mb-2 " id="questions-list-button">Questions List</button> -->
 
                 <form id="question-form" enctype="multipart/form-data">
                     <div class="form-group">
@@ -21,7 +44,8 @@
                     <div class="form-group">
                         <label for="question-description">Description<i>(Note: it will not be visible to the
                                 candidate)</i></label>
-                        <textarea class="form-control" id="question-description" name="questionDescription" rows="1"></textarea>
+                        <textarea class="form-control" id="question-description" name="questionDescription"
+                            rows="1"></textarea>
                     </div>
                     <div class="form-group">
                         <label for="question-tags">Tags<i>(Note:Tags should be -> JAVA, AWS, SPRING etc.)</i></label>
@@ -62,7 +86,20 @@
                                     </div>
                                 </div>
                             </div>
-                            
+                        </div>
+                        <div class="option">
+                            <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">Option 2:</label>
+                                <div class="col-sm-7">
+                                    <input type="text" class="form-control" name="option-2" required>
+                                </div>
+                                <div class="col-sm-2">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="isCorrect-2" value="true">
+                                        <label class="form-check-label" for="isCorrect-2">Is Correct</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <button type="button" class="btn btn-primary" id="add-option">Add Option</button>

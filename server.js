@@ -71,7 +71,7 @@ const questionSchema = new mongoose.Schema({
     questionTitle: String,
     questionDescription: String,
     image: String,
-    correctOptions:[String],
+    correctOptions: [String],
     questionType: String,
     questionTags: String,
     options: [
@@ -91,9 +91,22 @@ const user = new mongoose.Schema({
 
 const User = mongoose.model("User", user);
 
+const candidateSchema = new mongoose.Schema({
+    email: String,
+    securityCode: Number,
+});
+
+const Candidate = mongoose.model("Candidate", candidateSchema);
+
 const responseSchema = new mongoose.Schema({
+    testName: String,
+    name: String,
     emailId: String,
-    timestamp: Date,
+    testDate: Date,
+    testDuration: String,
+    startTime: Date,
+    endTime: Date,
+    timeTaken: String,
     responses: [
         {
             questionId: Number,
@@ -104,13 +117,29 @@ const responseSchema = new mongoose.Schema({
 
 const Response = mongoose.model("Response", responseSchema);
 
-const candidateSchema = new mongoose.Schema({
-    email: String,
-    securityCode: Number,
+const resultSchema = new mongoose.Schema({
+    testName: String,
+    name: String,
+    emailId: String,
+    testDate: Date,
+    testDuration: String,
+    startTime: Date,
+    endTime: Date,
+    timeTaken: String,
+    currentStatus: String,
+    totalQuestion: Number,
+    attemptedQuestoin: Number,
+    correctCount: Number,
+    wrongCount: Number,
+    skippedQuestions: Number,
+    result: String,
 });
 
-const Candidate = mongoose.model("Candidate", candidateSchema);
+const Result = mongoose.model("Result", resultSchema);
 
+
+
+// candidate creation api
 app.post("/candidates", async (req, res) => {
     try {
         const { email, securityCode } = req.body;
@@ -131,6 +160,7 @@ app.post("/candidates", async (req, res) => {
     }
 });
 
+// candidate credential verification api
 app.post("/candidate-login", async (req, res) => {
     const { email, securityCode } = req.body;
     console.log(email, securityCode);
@@ -150,20 +180,175 @@ app.post("/candidate-login", async (req, res) => {
 });
 
 app.post("/testmaster/api/save-response", async (req, res) => {
-    const { emailId, timestamp, responses } = req.body;
-
-    const responseDocument = new Response({
+    const {
+        testName,
+        name,
         emailId,
-        timestamp,
+        testDate,
+        testDuration,
+        startTime,
+        endTime,
+        responses,
+    } = req.body;
+
+    const timeDuration = endTime - startTime;
+    const minutes = Math.floor(timeDuration / (1000 * 60));
+    const seconds = Math.floor((timeDuration % (1000 * 60)) / 1000);
+    // formating "mm:ss"
+    const formattedTime = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+    const totalQuestion = responses.length;
+    // console.log(totalQuestion);
+    
+    //console.log(attemptedQuestion);
+    const responseDocument = new Response({
+        testName,
+        name,
+        emailId,
+        testDate,
+        testDuration,
+        startTime,
+        endTime,
+        timeTaken: formattedTime,
         responses,
     });
 
+    
+
     try {
         await responseDocument.save();
+
+        const attemptedQuestion = await incrementAttemptedQuestion(emailId);
+        const correctCount = await calculateResult(emailId);
+        const wrongCount = attemptedQuestion - correctCount;
+        const skippedQuestions = totalQuestion - attemptedQuestion;
+        let result = '';
+        if(correctCount >= 2){
+            result = 'Pass';
+        }else{
+            result = 'fail';
+        }
+        const resultData = {
+            testName: testName,
+            name: name,
+            emailId: emailId,
+            testDate: testDate,
+            testDuration: testDuration, 
+            startTime: startTime,
+            endTime: endTime,
+            timeTaken: formattedTime, 
+            currentStatus: 'Completed',
+            totalQuestion: totalQuestion,
+            attemptedQuestoin: attemptedQuestion,
+            correctCount: correctCount,
+            wrongCount: wrongCount,
+            skippedQuestions: skippedQuestions,
+            result: result,
+          };
+    
+          saveResult(resultData);
+
+
         res.status(200).json({ success: true, response: responseDocument });
     } catch (error) {
         console.error("Error saving response:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
+    }
+});
+
+
+async function incrementAttemptedQuestion(emailId) {
+    try {
+     
+      const responses = await Response.find({ emailId });
+
+      let attemptedQuestionCount = 0;   
+      responses.forEach((response) => {
+        response.responses.forEach((questionResponse) => {
+          if (questionResponse.selectedOptions && questionResponse.selectedOptions.length > 0) {
+            attemptedQuestionCount++;
+          }
+        });
+      });
+  
+      console.log(`Attempted questions count for ${emailId}: ${attemptedQuestionCount}`);
+      
+      return attemptedQuestionCount; 
+    } catch (error) {
+      console.error('Error incrementing attemptedQuestion count:', error);
+      throw error; 
+    }
+  }
+
+  
+
+  async function calculateResult(emailId) {
+    try {
+        const responseData = await Response.findOne({ emailId });
+        
+        if (!responseData || !responseData.responses || !Array.isArray(responseData.responses)) {
+            console.warn(`Invalid response data for emailId ${emailId}.`);
+            return 0; 
+        }
+
+        let correctAnswer = 0;
+
+       
+        for (const response of responseData.responses) {
+            try {
+                
+                const question = await Question.findOne({ questionId: response.questionId });
+
+                if (!question) {
+                    console.warn(`Question with ID ${response.questionId} not found.`);
+                    continue; 
+                }
+
+              
+                const correctOptions = question.correctOptions.sort(); 
+                const selectedOptions = response.selectedOptions.sort();
+
+                if (JSON.stringify(correctOptions) === JSON.stringify(selectedOptions)) {
+                    correctAnswer++;
+                }
+            } catch (error) {
+                console.error('Error calculating result:', error);
+            }
+        }
+        
+        console.log(`Correct questions count for ${emailId}: ${correctAnswer}`);
+        return correctAnswer;
+    } catch (error) {
+        console.error('Error fetching response data:', error);
+        throw error; 
+    }
+}
+
+  
+  
+
+async function saveResult(data) {
+    try {
+      
+      const result = new Result(data);
+  
+     
+      await result.save();
+  
+      console.log('Result saved successfully');
+    } catch (error) {
+      console.error('Error saving result:', error);
+    }
+  }
+
+  app.get('/results', async (req, res) => {
+    try {
+       
+        const results = await Result.find().sort({ testDate: -1 });
+
+        res.render('result', { results });
+    } catch (error) {
+        console.error('Error fetching results:', error);
+        res.status(500).send('Internal Server Error');
     }
 });
 
@@ -202,8 +387,8 @@ app.post("/upload", upload.single("image"), async (req, res) => {
     }
 
     const options = [];
-    const correctOptions = []
-    questionData.options.forEach(option => {
+    const correctOptions = [];
+    questionData.options.forEach((option) => {
         if (option.isCorrect) {
             correctOptions.push(option.text);
         }
@@ -231,6 +416,52 @@ app.post("/upload", upload.single("image"), async (req, res) => {
         res.status(500).send("Error saving question");
     }
 });
+
+app.get('/testmaster/api/edit-question/:questionId', async (req, res) => {
+    try {
+        const questionId = req.params.questionId;
+        
+        
+        const questionData = await Question.findOne({ questionId });
+
+        if (!questionData) {
+            
+            return res.status(404).json({ message: "Question not found" });
+        }
+
+        
+        res.render('editquestions', { questionData });
+    } catch (error) {
+        console.error("Error fetching question data:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+});
+
+
+
+app.put("/testmaster/api/questions/:questionId", async (req, res) => {
+    try {
+      const questionId = req.params.questionId;
+      const updateData = req.body; 
+  
+      
+      const updatedQuestion = await Question.findOneAndUpdate(
+        { questionId },
+        updateData,
+        { new: true } 
+      );
+        
+      if (!updatedQuestion) {
+        return res.status(404).json({ message: "Question not found" });
+      }
+      
+      return res.json(updatedQuestion);
+    } catch (error) {
+      console.error("Error updating question:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  });
+  
 
 app.get("/questions-list", async (req, res) => {
     try {

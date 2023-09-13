@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Results</title>
+   
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        /* Adjust the margin for the search bar */
+        #searchInput {
+            margin-right: 0; /* Remove right margin */
+        }
+
+        /* Reduce font size */
+        .table th, .table td {
+            font-size: 14px; /* Adjust font size as needed */
+        }
+
+        /* Add margin between search bar, navigation tabs, and table */
+        .mb-3 {
+            margin-bottom: 10px; /* Add margin at the bottom of the search bar */
+        }
+
+        .mt-3 {
+            margin-top: 20px; /* Add margin at the top of the navigation tabs */
+        }
+
+        .mt-5 {
+            margin-top: 20px; /* Add margin at the top of the table */
+        }
+
+        /* Make the table responsive */
+        .table-responsive {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">TestMaster <sub>by Algodomain Solutions</sub></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link " href="/results">Results</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="/upload">Create Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link  " href="/questions-list">Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab4">Tab 4</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+
+    <div class="container">
+        <div class="input-group mb-3 mt-3">
+            <input type="text" id="searchInput" class="form-control col-12" placeholder="Search results...">
+        </div>
+        
+
+        <div class="tab-content mt-3">
+            <div class="tab-pane fade show active" id="results">
+                <h3>Test Results</h3>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Test Name</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Test Date</th>
+                                <th>Test Duration</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Time Taken</th>
+                                <th>Status</th>
+                                <th>Total Questions</th>
+                                <th>Attempted Questions</th>
+                                <th>Correct Answers</th>
+                                <th>Wrong Answers</th>
+                                <th>Skipped Questions</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% results.forEach(result => { %>
+                                <tr>
+                                    <td><%= result.testName %></td>
+                                    <td><%= result.name %></td>
+                                    <td><%= result.emailId %></td>
+                                    <td><%= result.testDate %></td>
+                                    <td><%= result.testDuration %></td>
+                                    <td><%= result.startTime %></td>
+                                    <td><%= result.endTime %></td>
+                                    <td><%= result.timeTaken %></td>
+                                    <td><%= result.currentStatus %></td>
+                                    <td><%= result.totalQuestion %></td>
+                                    <td><%= result.attemptedQuestoin %></td>
+                                    <td><%= result.correctCount %></td>
+                                    <td><%= result.wrongCount %></td>
+                                    <td><%= result.skippedQuestions %></td>
+                                    <td><%= result.result %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

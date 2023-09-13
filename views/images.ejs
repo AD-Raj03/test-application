@@ -7,12 +7,13 @@
 </head>
 
 <body>
+    
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-10">
                 <h5 id="questionTitle">Question Title</h5>
                 <img src="/uploads/image<%= currentIndex + 1 %>.jpg" alt="Image" class="img-fluid mb-3">
-                <div id="optionsContainer" class="row"></div>
+                <div id="optionsContainer" class="row fixed-bottom m-5"></div>
             </div>
             <div class="col-md-2">
                 <h6>Remaining Time</h6>
@@ -68,8 +69,13 @@
         async function sendResponsesToServer() {
             try {
 
+                const testName = 'java';
+                const name = 'algodomain';
                 const emailId = 'algodomain@gmail.com';
-                const timestamp = new Date().toISOString();
+                const testDate = new Date();
+                const testDuration = '30 min';
+                const startTime = localStorage.getItem('startTime');
+                const endTime = new Date().getTime();
                 const responsesArray = Object.entries(responses).map(([index, selectedOptions]) => ({
                     questionId: questionIds[index],
                     selectedOptions,
@@ -81,8 +87,13 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
+                        testName,
+                        name,
                         emailId,
-                        timestamp,
+                        testDate,
+                        testDuration,
+                        startTime,
+                        endTime,
                         responses: responsesArray
                     }),
                 });
@@ -131,17 +142,21 @@
 
                     if (question.questionType === 'multichoice') {
                         optionElement.innerHTML = `
+                    <div class="border  border-info border-2 rounded rounded-2  p-2 m-1 ">
             <div class="form-check">
                 <input type="checkbox" class="form-check-input" name="option" value="${option.text}">
                 <label class="form-check-label">${option.text}</label>
             </div>
+            </div>
         `;
                     } else if (question.questionType === 'singlechoice') {
                         optionElement.innerHTML = `
+                        <div class="border  border-info border-2 rounded rounded-2  p-2 m-1">
             <div class="form-check">
                 <input type="radio" class="form-check-input" name="option" value="${option.text}">
                 <label class="form-check-label">${option.text}</label>
             </div>
+        </div>
         `;
                     }
 

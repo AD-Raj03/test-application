@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Edit Question</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">TestMaster <sub>by Algodomain Solutions</sub></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link " href="/results">Results</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="/upload">Create Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link  " href="/questions-list">Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#tab4">Tab 4</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h3 class="text-center">Edit Question</h3>
+
+                <form id="edit-question-form" method="POST" action="/testmaster/api/questions/<%= questionData.questionId %>">
+                    <input type="hidden" name="_method" value="PUT">
+
+                    <div class="form-group">
+                        <label for="questionTitle">Question Title</label>
+                        <input type="text" class="form-control" id="questionTitle" name="questionTitle" value="<%= questionData.questionTitle %>" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="questionDescription">Question Description</label>
+                        <textarea class="form-control" id="questionDescription" name="questionDescription" rows="3"><%= questionData.questionDescription %></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="questionTags">Question Tags</label>
+                        <input type="text" class="form-control" id="questionTags" name="questionTags" value="<%= questionData.questionTags %>">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="question-image" class="btn btn-primary btn-block btn-outlined">Upload Question
+                            Image</label>
+                        <input type="file" class="form-control-file" id="question-image" name="image" accept="image/*"
+                            style="display: none;">
+                    </div>
+
+                    <div class="form-group row">
+                        <label class="col-sm-3 col-form-label">Question Type:</label>
+                        <div class="col-sm-auto">
+                            <div class="form-check form-check-inline">
+                                <input type="radio" class="form-check-input" id="multichoice" name="questionType"
+                                    value="multichoice" <%= questionData.questionType === 'multichoice' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="multichoice">Multichoice</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input type="radio" class="form-check-input" id="singlechoice" name="questionType"
+                                    value="singlechoice" <%= questionData.questionType === 'singlechoice' ? 'checked' : '' %>>
+                                <label class="form-check-label" for="singlechoice">Single Choice</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    
+
+                    <button type="submit" class="btn btn-success">Update</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+
+</html>
