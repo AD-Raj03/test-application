@@ -3,26 +3,56 @@
 
 <head>
     <title>Questions Page</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
 </head>
 
 <body>
-    
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow">
+        <a class="navbar-brand" href="#">TestMaster <sub>by Algodomain Solutions</sub></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto mx-5 ">
+                <li class="nav-item">
+                   <h3> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-person-circle" viewBox="0 0 16 16">
+                        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                        <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                      </svg>
+                    </h3>
+                </li>
+                <li class="nav-item">
+                   
+                    <a class="nav-link " href=""></a>
+                </li>
+                
+            </ul>
+        </div>
+    </nav>
     <div class="container mt-4">
         <div class="row">
             <div class="col-md-10">
                 <h5 id="questionTitle">Question Title</h5>
-                <img src="/uploads/image<%= currentIndex + 1 %>.jpg" alt="Image" class="img-fluid mb-3">
+                <img id="questionImage" src="" alt="Image" class="img-fluid mb-3 " />
                 <div id="optionsContainer" class="row fixed-bottom m-5"></div>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2 shadow p-3">
+                <!-- Display attempted question counter -->
+                <h6 id="attemptedCounter">Attempted Questions: 0 / 0</h6>
                 <h6>Remaining Time</h6>
                 <p id="timer">Timer: 0 seconds</p>
-                <form id="nextForm" action="http://localhost:3000/next" method="POST">
-                    <button type="submit" id="nextButton" class="btn btn-primary btn-block mb-2">Next</button>
+                <form id="nextForm" action="http://192.168.1.107:3000/next" method="POST">
+                    <button type="submit" id="nextButton" class="btn btn-primary btn-block mb-2">
+                        Next
+                    </button>
                 </form>
-                <button id="previousButton" class="btn btn-warning btn-block mb-2">Previous</button>
-                <button id="submitButton" class="btn btn-danger btn-block" style="display: none;">Submit</button>
+                <button id="previousButton" class="btn btn-warning btn-block mb-2">
+                    Previous
+                </button>
+                <button id="submitButton" class="btn btn-danger btn-block" style="display: none">
+                    Submit
+                </button>
             </div>
         </div>
     </div>
@@ -33,31 +63,48 @@
 
     <script>
         const totalImages = <%= images.length %>;
-        let currentIndex = <%= currentIndex %>;
+        let currentIndex = 0;
         let questions = [];
+
         const nextButton = document.getElementById('nextButton');
         const previousButton = document.getElementById('previousButton');
         const submitButton = document.getElementById('submitButton');
         const optionsContainer = document.getElementById('optionsContainer');
         const questionTitle = document.getElementById('questionTitle');
+        const questionImage = document.getElementById('questionImage');
+        const attemptedCounter = document.getElementById('attemptedCounter');
+        const navLinkElement = document.querySelector(".nav-link");
 
         function updateImage() {
-            const image = document.querySelector('img');
-            const imageNumber = currentIndex + 1;
-            image.src = `/uploads/image${imageNumber}.jpg`;
+            console.log("question length", questions.length)
+            console.log(questions[currentIndex].image)
+            if (questions.length > 0 && questions[currentIndex].image) {
+                questionImage.src = '/uploads/' + questions[currentIndex].image;
+            } else {
+                questionImage.src = '/uploads/' + questions[0].image;
+            }
+        }
+        const userEmail = localStorage.getItem("userEmail");
+        if (userEmail) {
+           
+            navLinkElement.textContent = userEmail;
+        } else {
+            
+            navLinkElement.textContent = "Login"; 
         }
 
         let questionIds = [];
 
         async function fetchQuestions() {
             try {
-                const response = await fetch('http://localhost:3000/questions');
+                const response = await fetch('http://192.168.1.107:3000/questions');
                 const data = await response.json();
 
                 if (data.success) {
                     questions = data.questions;
                     questionIds = questions.map(question => question.questionId);
                     fetchAndDisplayQuestions();
+                    updateImage();
                 }
             } catch (error) {
                 console.error('Error fetching questions:', error);
@@ -68,10 +115,10 @@
 
         async function sendResponsesToServer() {
             try {
-
                 const testName = 'java';
                 const name = 'algodomain';
-                const emailId = 'algodomain@gmail.com';
+                const emailId = localStorage.getItem("userEmail");
+                console.log(emailId);
                 const testDate = new Date();
                 const testDuration = '30 min';
                 const startTime = localStorage.getItem('startTime');
@@ -81,7 +128,7 @@
                     selectedOptions,
                 }));
 
-                const response = await fetch('http://localhost:3000/testmaster/api/save-response', {
+                const response = await fetch('http://192.168.1.107:3000/testmaster/api/save-response', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -108,27 +155,69 @@
             }
         }
 
-        let responses = [];
+        let selectedOptionsArray = new Array(totalImages).fill([]);
+
+        function updateSelectedOptions() {
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="option"]:checked'))
+                .map(input => input.value);
+
+            selectedOptionsArray[currentIndex] = selectedOptions;
+        }
+
+        optionsContainer.addEventListener('change', () => {
+            updateSelectedOptions();
+            updateAttemptedCounter(); 
+        });
+
+        function updateAttemptedCounter() {
+            const totalQuestions = questions.length;
+            attemptedCounter.textContent = `Attempted Questions: ${selectedOptionsArray.filter(options => options.length > 0).length} / ${totalQuestions}`;
+        }
+
+        let responses = [];  // existing
 
         nextButton.addEventListener('click', (event) => {
             event.preventDefault();
 
-            const selectedOptions = Array.from(document.querySelectorAll('input[name="option"]:checked'))
+            const selectedOptions = Array.from(document.querySelectorAll('input[name="option"]:checked'))  // existing
                 .map(input => input.value);
 
-            responses[currentIndex] = selectedOptions;
+            responses[currentIndex] = selectedOptions; // existing
+
+            updateSelectedOptions();
+            updateAttemptedCounter();
 
             currentIndex = (currentIndex + 1) % totalImages;
             fetchAndDisplayQuestions();
             updateImage();
+
+            updateOptions();
         });
 
         previousButton.addEventListener('click', (event) => {
             event.preventDefault();
+
+            updateSelectedOptions();
             currentIndex = (currentIndex - 1 + totalImages) % totalImages;
             fetchAndDisplayQuestions();
             updateImage();
+            updateOptions();
+            updateAttemptedCounter();
         });
+
+        function updateOptions() {
+            const selectedOptions = selectedOptionsArray[currentIndex];
+
+            if (selectedOptions && selectedOptions.length > 0) {
+                // Loop through selected options and update the corresponding checkboxes or radio buttons.
+                selectedOptions.forEach(value => {
+                    const inputElement = document.querySelector(`input[value="${value}"]`);
+                    if (inputElement) {
+                        inputElement.checked = true;
+                    }
+                });
+            }
+        }
 
         function fetchAndDisplayQuestions() {
             if (questions.length > 0) {
@@ -142,32 +231,31 @@
 
                     if (question.questionType === 'multichoice') {
                         optionElement.innerHTML = `
-                    <div class="border  border-info border-2 rounded rounded-2  p-2 m-1 ">
-            <div class="form-check">
-                <input type="checkbox" class="form-check-input" name="option" value="${option.text}">
-                <label class="form-check-label">${option.text}</label>
-            </div>
-            </div>
-        `;
+                                  <div class="border  border-info border-2 rounded rounded-2  p-2 m-1 ">
+                                      <div class="form-check">
+                                          <input type="checkbox" class="form-check-input" name="option" value="${option.text}">
+                                          <label class="form-check-label">${option.text}</label>
+                                      </div>
+                                  </div>
+                              `;
                     } else if (question.questionType === 'singlechoice') {
                         optionElement.innerHTML = `
-                        <div class="border  border-info border-2 rounded rounded-2  p-2 m-1">
-            <div class="form-check">
-                <input type="radio" class="form-check-input" name="option" value="${option.text}">
-                <label class="form-check-label">${option.text}</label>
-            </div>
-        </div>
-        `;
+                                  <div class="border  border-info border-2 rounded rounded-2  p-2 m-1">
+                                      <div class="form-check">
+                                          <input type="radio" class="form-check-input" name="option" value="${option.text}">
+                                          <label class="form-check-label">${option.text}</label>
+                                      </div>
+                                  </div>
+                              `;
                     }
 
                     optionsContainer.appendChild(optionElement);
                 });
 
                 updateNextButtonState();
+                updateAttemptedCounter();
             }
         }
-
-
 
         submitButton.addEventListener('click', (event) => {
             event.preventDefault();
@@ -184,9 +272,12 @@
                 sendResponsesToServer();
 
                 localStorage.removeItem('startTime');
+                localStorage.removeItem('userEmail');
                 window.location.href = '/thank-you';
             }
         });
+
+        updateAttemptedCounter();
 
         function updateNextButtonState() {
             if (currentIndex === totalImages - 1) {
@@ -229,9 +320,10 @@
 
         window.addEventListener('load', () => {
             startTimer();
-        });
 
-        fetchAndDisplayQuestions();
+        });
+        fetchQuestions();
+        updateAttemptedCounter();
     </script>
 </body>
 

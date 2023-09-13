@@ -6,11 +6,15 @@ const path = require("path");
 const fs = require("fs");
 const session = require("express-session");
 const bodyParser = require("body-parser");
+const cors = require('cors');
+const router = express.Router();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
+app.use(cors());
+app.use('/api', router);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(
     session({
@@ -58,6 +62,10 @@ app.get("/login", (req, res) => {
     res.render("login");
 });
 
+app.get("/addquestionpaper", (req, res) => {
+    res.render("addquestionpaper");
+});
+
 app.get("/", (req, res) => {
     res.render("candidatelogin");
 });
@@ -94,6 +102,7 @@ const User = mongoose.model("User", user);
 const candidateSchema = new mongoose.Schema({
     email: String,
     securityCode: Number,
+    isActive: Boolean,
 });
 
 const Candidate = mongoose.model("Candidate", candidateSchema);
@@ -102,10 +111,10 @@ const responseSchema = new mongoose.Schema({
     testName: String,
     name: String,
     emailId: String,
-    testDate: Date,
+    testDate: String,
     testDuration: String,
-    startTime: Date,
-    endTime: Date,
+    startTime: String,
+    endTime: String,
     timeTaken: String,
     responses: [
         {
@@ -121,10 +130,10 @@ const resultSchema = new mongoose.Schema({
     testName: String,
     name: String,
     emailId: String,
-    testDate: Date,
+    testDate: String,
     testDuration: String,
-    startTime: Date,
-    endTime: Date,
+    startTime: String,
+    endTime: String,
     timeTaken: String,
     currentStatus: String,
     totalQuestion: Number,
@@ -139,14 +148,25 @@ const Result = mongoose.model("Result", resultSchema);
 
 
 
-// candidate creation api
+const questionPaperSchema = new mongoose.Schema({
+    questionPaperTitle: String,
+    description:  String,
+    minimumNumberForPassing: Number,
+    questionIds: [Number],
+});
+
+const QuestionPaper = mongoose.model('QuestionPaper', questionPaperSchema);
+
+
 app.post("/candidates", async (req, res) => {
     try {
         const { email, securityCode } = req.body;
+        const isActive = true;
 
         const candidate = new Candidate({
             email,
             securityCode,
+            isActive: isActive,
         });
 
         await candidate.save();
@@ -168,14 +188,16 @@ app.post("/candidate-login", async (req, res) => {
     try {
         const candidate = await Candidate.findOne({ email, securityCode });
 
-        if (candidate) {
-            res.redirect("/images");
+        if (candidate.isActive) {
+
+            // await Candidate.findOneAndUpdate({ email: candidate.email }, { isActive: false });
+            res.redirect("/testmaster/api/exampaper");
         } else {
-            res.status(400).json({ success: false, message: "Invalid data" });
+            res.status(400).json({ success: false, message: "Please enter correct email and security code" });
         }
     } catch (error) {
         console.error("Error:", error);
-        res.status(500).send("Internal Server Error");
+        res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 });
 
@@ -190,6 +212,14 @@ app.post("/testmaster/api/save-response", async (req, res) => {
         endTime,
         responses,
     } = req.body;
+    console.log('1',startTime);
+
+    const currentTestDate = new Date(testDate);
+    const day = currentTestDate.getDate();
+    const month = currentTestDate.getMonth() + 1; 
+    const year = currentTestDate.getFullYear();
+
+    const formattedTestDate = `${day}/${month}/${year}`;
 
     const timeDuration = endTime - startTime;
     const minutes = Math.floor(timeDuration / (1000 * 60));
@@ -198,21 +228,29 @@ app.post("/testmaster/api/save-response", async (req, res) => {
     const formattedTime = `${minutes}:${seconds.toString().padStart(2, "0")}`;
     const totalQuestion = responses.length;
     // console.log(totalQuestion);
-    
+    const receivedStartTime = new Date(req.body.startTime);
+
+    const startTimeForFormatting = new Date(parseInt(startTime, 10));
+    const localTimeString = startTimeForFormatting.toLocaleString();
+     const formattedStartTime = await formatTime(localTimeString);
+    // console.log("formattedStartTime",formattedStartTime);
+
+    const formattedEndTime = await formatTime(endTime)
+    console.log("formattedEndTime",formattedEndTime);
     //console.log(attemptedQuestion);
     const responseDocument = new Response({
         testName,
         name,
         emailId,
-        testDate,
+        testDate: formattedTestDate,
         testDuration,
-        startTime,
-        endTime,
+        startTime : formattedStartTime,
+        endTime :formattedEndTime,
         timeTaken: formattedTime,
         responses,
     });
 
-    
+
 
     try {
         await responseDocument.save();
@@ -222,20 +260,20 @@ app.post("/testmaster/api/save-response", async (req, res) => {
         const wrongCount = attemptedQuestion - correctCount;
         const skippedQuestions = totalQuestion - attemptedQuestion;
         let result = '';
-        if(correctCount >= 2){
+        if (correctCount >= 2) {
             result = 'Pass';
-        }else{
+        } else {
             result = 'fail';
         }
         const resultData = {
             testName: testName,
             name: name,
             emailId: emailId,
-            testDate: testDate,
-            testDuration: testDuration, 
-            startTime: startTime,
-            endTime: endTime,
-            timeTaken: formattedTime, 
+            testDate: formattedTestDate,
+            testDuration: testDuration,
+            startTime: formattedStartTime,
+            endTime: formattedEndTime,
+            timeTaken: formattedTime,
             currentStatus: 'Completed',
             totalQuestion: totalQuestion,
             attemptedQuestoin: attemptedQuestion,
@@ -243,9 +281,9 @@ app.post("/testmaster/api/save-response", async (req, res) => {
             wrongCount: wrongCount,
             skippedQuestions: skippedQuestions,
             result: result,
-          };
-    
-          saveResult(resultData);
+        };
+
+        saveResult(resultData);
 
 
         res.status(200).json({ success: true, response: responseDocument });
@@ -255,56 +293,65 @@ app.post("/testmaster/api/save-response", async (req, res) => {
     }
 });
 
+async function formatTime(date) {
+    const now = new Date(date);
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+  
+    return `${hours}:${minutes}:${seconds}`;
+  }
+
 
 async function incrementAttemptedQuestion(emailId) {
     try {
-     
-      const responses = await Response.find({ emailId });
 
-      let attemptedQuestionCount = 0;   
-      responses.forEach((response) => {
-        response.responses.forEach((questionResponse) => {
-          if (questionResponse.selectedOptions && questionResponse.selectedOptions.length > 0) {
-            attemptedQuestionCount++;
-          }
+        const responses = await Response.find({ emailId });
+
+        let attemptedQuestionCount = 0;
+        responses.forEach((response) => {
+            response.responses.forEach((questionResponse) => {
+                if (questionResponse.selectedOptions && questionResponse.selectedOptions.length > 0) {
+                    attemptedQuestionCount++;
+                }
+            });
         });
-      });
-  
-      console.log(`Attempted questions count for ${emailId}: ${attemptedQuestionCount}`);
-      
-      return attemptedQuestionCount; 
+
+        console.log(`Attempted questions count for ${emailId}: ${attemptedQuestionCount}`);
+
+        return attemptedQuestionCount;
     } catch (error) {
-      console.error('Error incrementing attemptedQuestion count:', error);
-      throw error; 
+        console.error('Error incrementing attemptedQuestion count:', error);
+        throw error;
     }
-  }
+}
 
-  
 
-  async function calculateResult(emailId) {
+
+async function calculateResult(emailId) {
     try {
         const responseData = await Response.findOne({ emailId });
-        
+
         if (!responseData || !responseData.responses || !Array.isArray(responseData.responses)) {
             console.warn(`Invalid response data for emailId ${emailId}.`);
-            return 0; 
+            return 0;
         }
 
         let correctAnswer = 0;
 
-       
+
         for (const response of responseData.responses) {
             try {
-                
+
                 const question = await Question.findOne({ questionId: response.questionId });
 
                 if (!question) {
                     console.warn(`Question with ID ${response.questionId} not found.`);
-                    continue; 
+                    continue;
                 }
 
-              
-                const correctOptions = question.correctOptions.sort(); 
+
+                const correctOptions = question.correctOptions.sort();
                 const selectedOptions = response.selectedOptions.sort();
 
                 if (JSON.stringify(correctOptions) === JSON.stringify(selectedOptions)) {
@@ -314,36 +361,36 @@ async function incrementAttemptedQuestion(emailId) {
                 console.error('Error calculating result:', error);
             }
         }
-        
+
         console.log(`Correct questions count for ${emailId}: ${correctAnswer}`);
         return correctAnswer;
     } catch (error) {
         console.error('Error fetching response data:', error);
-        throw error; 
+        throw error;
     }
 }
 
-  
-  
+
+
 
 async function saveResult(data) {
     try {
-      
-      const result = new Result(data);
-  
-     
-      await result.save();
-  
-      console.log('Result saved successfully');
-    } catch (error) {
-      console.error('Error saving result:', error);
-    }
-  }
 
-  app.get('/results', async (req, res) => {
+        const result = new Result(data);
+
+
+        await result.save();
+
+        console.log('Result saved successfully');
+    } catch (error) {
+        console.error('Error saving result:', error);
+    }
+}
+
+app.get('/results', async (req, res) => {
     try {
-       
-        const results = await Result.find().sort({ testDate: -1 });
+
+        const results = await Result.find().sort({ endTime: -1 });
 
         res.render('result', { results });
     } catch (error) {
@@ -351,6 +398,7 @@ async function saveResult(data) {
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 app.get("/thank-you", (req, res) => {
     if (req.session.thankYouShown) {
@@ -420,16 +468,16 @@ app.post("/upload", upload.single("image"), async (req, res) => {
 app.get('/testmaster/api/edit-question/:questionId', async (req, res) => {
     try {
         const questionId = req.params.questionId;
-        
-        
+
+
         const questionData = await Question.findOne({ questionId });
 
         if (!questionData) {
-            
+
             return res.status(404).json({ message: "Question not found" });
         }
 
-        
+
         res.render('editquestions', { questionData });
     } catch (error) {
         console.error("Error fetching question data:", error);
@@ -441,27 +489,27 @@ app.get('/testmaster/api/edit-question/:questionId', async (req, res) => {
 
 app.put("/testmaster/api/questions/:questionId", async (req, res) => {
     try {
-      const questionId = req.params.questionId;
-      const updateData = req.body; 
-  
-      
-      const updatedQuestion = await Question.findOneAndUpdate(
-        { questionId },
-        updateData,
-        { new: true } 
-      );
-        
-      if (!updatedQuestion) {
-        return res.status(404).json({ message: "Question not found" });
-      }
-      
-      return res.json(updatedQuestion);
+        const questionId = req.params.questionId;
+        const updateData = req.body;
+
+
+        const updatedQuestion = await Question.findOneAndUpdate(
+            { questionId },
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedQuestion) {
+            return res.status(404).json({ message: "Question not found" });
+        }
+
+        return res.json(updatedQuestion);
     } catch (error) {
-      console.error("Error updating question:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
+        console.error("Error updating question:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
-  });
-  
+});
+
 
 app.get("/questions-list", async (req, res) => {
     try {
@@ -487,6 +535,38 @@ app.get("/questions", async (req, res) => {
             .json({ success: false, message: "Error fetching questions" });
     }
 });
+
+app.post('/testmaster/api/questionpapers', async (req, res) => {
+    try {
+        const { questionPaperTitle, description, minimumNumberForPassing, questionIds } = req.body;
+
+
+        const newQuestionPaper = new QuestionPaper({
+            questionPaperTitle,
+            description,
+            minimumNumberForPassing,
+            questionIds,
+        });
+
+
+        const savedQuestionPaper = await newQuestionPaper.save();
+
+        res.status(201).json(savedQuestionPaper);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.get('/testmaster/api/questionpapers', async (req, res) => {
+    try {
+        const questionPapers = await QuestionPaper.find();
+
+        res.render('questionpapers', { questionPapers });
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+})
+
 
 app.delete("/testmaster/api/questions/:id", async (req, res) => {
     try {
@@ -515,7 +595,7 @@ app.delete("/testmaster/api/questions/:id", async (req, res) => {
     }
 });
 
-app.get("/images", (req, res) => {
+app.get("/testmaster/api/exampaper", (req, res) => {
     const imageFiles = fs.readdirSync("./public/uploads/");
     let currentIndex = req.session.currentIndex || 0;
 
@@ -523,7 +603,7 @@ app.get("/images", (req, res) => {
 
     req.session.currentIndex = currentIndex;
 
-    res.render("images", { images: imageFiles, currentIndex });
+    res.render("exampaper", { images: imageFiles, currentIndex });
 });
 
 app.post("/next", (req, res) => {
@@ -537,6 +617,34 @@ app.post("/next", (req, res) => {
     console.log("currentIndex:", currentIndex);
     res.json("/images");
 });
+
+router.get('/questions-by-ids', async (req, res) => {
+    try {
+      // Get the array of questionIds from the request query
+      const { questionIds } = req.query;
+      console.log(questionIds)
+  
+      if (!questionIds) {
+        return res.status(400).json({ error: 'Missing questionIds parameter' });
+      }
+  
+      const ids = questionIds.split(',').map((id) => parseInt(id, 10));
+  
+      const questions = await Question.find({ questionId: { $in: ids } });
+  
+      const result = questions.map((question) => ({
+        questionId: question.questionId,
+        questionTitle: question.questionTitle,
+        questionDescription: question.questionDescription,
+      }));
+  
+      res.json(result);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+  
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
