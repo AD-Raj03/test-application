@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Question Paper</title>
+    <!-- Add Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow">
+        <a class="navbar-brand" href="#">TestMaster <sub>by Algodomain Solutions</sub></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse " id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link " href="/results">Results</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="/upload">Create Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link  " href="/questions-list">Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/testmaster/api/questionpapers">Questions Papers</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container mt-4 ">
+        <div class="row justify-content-lg-center">
+            <div class="col col-lg-6 border border-black rounded rounded-2 p-2 shadow">
+                <h3 class="text-center border border-black rounded rounded-2 mt-2">Edit Question Paper</h3>
+
+                <div class="form-group">
+                    <label for="questionPaperTitle">Question Paper Title:</label>
+                    <input type="text" class="form-control" id="questionPaperTitle" name="questionPaperTitle"
+                        value="<%= questionPaper.questionPaperTitle %>" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea class="form-control" id="description" name="description" rows="1"
+                        required><%= questionPaper.description %></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="minimumNumberForPassing">Minimum Number for Passing:</label>
+                    <input type="number" class="form-control" id="minimumNumberForPassing"
+                        name="minimumNumberForPassing" value="<%= questionPaper.minimumNumberForPassing %>" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="updateQuestionPaper()">Update Question
+                    Paper</button>
+                <button id="addQuestionsButton" class="btn btn-success">Add Questions</button>
+
+                <hr />
+
+                <!-- Questions Table -->
+                <table class="table mt-3">
+                    <thead>
+                        <tr>
+                            <th>S. No.</th>
+                            <th>Title</th>
+                            <th>Description</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="questionsTableBody">
+                        <!-- Questions will be rendered here -->
+                        <% for (let i=0; i < questions.length; i++) { %>
+                            <tr>
+                                <td>
+                                    <%= i + 1 %>
+                                </td>
+                                <td>
+                                    <%= questions[i].questionTitle %>
+                                </td>
+                                <td>
+                                    <%= questions[i].questionDescription %>
+                                </td>
+                                <td>
+                                    <button class="btn btn-danger"
+                                        onclick="deleteQuestion(<%= questions[i].questionId %>)">Delete</button>
+                                </td>
+                            </tr>
+                            <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Your JavaScript Code -->
+    <script>
+        document.getElementById("addQuestionsButton").addEventListener("click", function () {
+
+            window.location.href = "/questions-list";
+        });
+
+        function updateQuestionPaper() {
+            const questionPaperTitle = document.getElementById("questionPaperTitle").value;
+            const description = document.getElementById("description").value;
+            const minimumNumberForPassing = document.getElementById("minimumNumberForPassing").value;
+            const savedSelectedQuestionIds = JSON.parse(localStorage.getItem("selectedQuestionIds"));
+            let questionIds = []
+             questionIds = <%= JSON.stringify(questionPaper.questionIds) %>;
+             console.log('before',questionIds)
+            questionIds.concat(savedSelectedQuestionIds)
+            console.log('before',questionIds)
+
+            const requestData = {
+                questionPaperTitle,
+                description,
+                minimumNumberForPassing,
+                questionIds:questionIds,
+            };
+
+            fetch(`/testmaster/api/questionpapers/${questionPaper._id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestData),
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    // Handle the response here, e.g., display a success message
+                    console.log("Question paper updated successfully:", data);
+                    localStorage.removeItem("selectedQuestionIds");
+                    window.location.href = '/testmaster/api/questionpapers';
+                })
+                .catch((error) => {
+                    console.error("Error updating question paper:", error);
+                    // Handle the error, display an error message, etc.
+                });
+        }
+
+        function deleteQuestion(questionId) {
+            // Replace this with your logic to delete the question
+            console.log("Deleting question with ID:", questionId);
+            // After deletion, you can call renderQuestions() again to refresh the table
+        }
+    </script>
+</body>
+
+</html>

@@ -44,12 +44,12 @@
                     <div class="form-group">
                         <label for="question-description">Description<i>(Note: it will not be visible to the
                                 candidate)</i></label>
-                        <textarea class="form-control" id="question-description" name="questionDescription"
-                            rows="1"></textarea>
+                        <textarea class="form-control" id="question-description" name="questionDescription" rows="1"
+                            required></textarea>
                     </div>
                     <div class="form-group">
                         <label for="question-tags">Tags<i>(Note:Tags should be -> JAVA, AWS, SPRING etc.)</i></label>
-                        <input class="form-control" id="question-tags" name="questionTags"></input>
+                        <input class="form-control" id="question-tags" name="questionTags" required></input>
                     </div>
                     <div class="form-group">
                         <label for="question-image" class="btn btn-primary btn-block btn-outlined">Upload Question
@@ -182,16 +182,39 @@
             questionData.questionType = formData.get('questionType');
             questionData.questionTags = formData.get('questionTags').toUpperCase();
 
+
+
+            if (!questionData.questionTitle) {
+                alert('Please enter a question title.');
+                return;
+            }
+
+            if (!questionData.questionDescription) {
+                alert('Please enter a question description.');
+                return;
+            }
+            if (!questionData.questionType) {
+                alert('Please enter a question type.');
+                return;
+            }
+            if (!questionData.questionTags) {
+                alert('Please enter a question tags.');
+                return;
+            }
+
             const combinedFormData = new FormData();
 
             combinedFormData.append('questionData', JSON.stringify(questionData));
 
             const imageInput = document.getElementById('question-image');
-            if (imageInput.files.length === 0) {
+            if (imageInput.files.length === 0 && questionData) {
                 alert('Please select an image.');
                 return;
             }
             combinedFormData.append('image', formData.get('image'));
+
+
+
 
             fetch('http://localhost:3000/upload', {
                 method: 'POST',

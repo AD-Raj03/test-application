@@ -66,6 +66,9 @@ app.get("/addquestionpaper", (req, res) => {
     res.render("addquestionpaper");
 });
 
+
+
+
 app.get("/", (req, res) => {
     res.render("candidatelogin");
 });
@@ -150,7 +153,7 @@ const Result = mongoose.model("Result", resultSchema);
 
 const questionPaperSchema = new mongoose.Schema({
     questionPaperTitle: String,
-    description:  String,
+    description: String,
     minimumNumberForPassing: Number,
     questionIds: [Number],
 });
@@ -212,11 +215,11 @@ app.post("/testmaster/api/save-response", async (req, res) => {
         endTime,
         responses,
     } = req.body;
-    console.log('1',startTime);
+    console.log('1', startTime);
 
     const currentTestDate = new Date(testDate);
     const day = currentTestDate.getDate();
-    const month = currentTestDate.getMonth() + 1; 
+    const month = currentTestDate.getMonth() + 1;
     const year = currentTestDate.getFullYear();
 
     const formattedTestDate = `${day}/${month}/${year}`;
@@ -232,11 +235,11 @@ app.post("/testmaster/api/save-response", async (req, res) => {
 
     const startTimeForFormatting = new Date(parseInt(startTime, 10));
     const localTimeString = startTimeForFormatting.toLocaleString();
-     const formattedStartTime = await formatTime(localTimeString);
+    const formattedStartTime = await formatTime(localTimeString);
     // console.log("formattedStartTime",formattedStartTime);
 
     const formattedEndTime = await formatTime(endTime)
-    console.log("formattedEndTime",formattedEndTime);
+    console.log("formattedEndTime", formattedEndTime);
     //console.log(attemptedQuestion);
     const responseDocument = new Response({
         testName,
@@ -244,8 +247,8 @@ app.post("/testmaster/api/save-response", async (req, res) => {
         emailId,
         testDate: formattedTestDate,
         testDuration,
-        startTime : formattedStartTime,
-        endTime :formattedEndTime,
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
         timeTaken: formattedTime,
         responses,
     });
@@ -298,9 +301,9 @@ async function formatTime(date) {
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const seconds = now.getSeconds();
-  
+
     return `${hours}:${minutes}:${seconds}`;
-  }
+}
 
 
 async function incrementAttemptedQuestion(emailId) {
@@ -538,20 +541,20 @@ app.get("/questions", async (req, res) => {
 
 app.post('/testmaster/api/questionpapers', async (req, res) => {
     try {
-        const { questionPaperTitle, description, minimumNumberForPassing, questionIds } = req.body;
+        const { questionPaperTitle, description, minimumNumberForPassing } = req.body;
 
 
         const newQuestionPaper = new QuestionPaper({
             questionPaperTitle,
             description,
             minimumNumberForPassing,
-            questionIds,
+           
         });
 
 
         const savedQuestionPaper = await newQuestionPaper.save();
 
-        res.status(201).json(savedQuestionPaper);
+        res.status(201).json(savedQuestionPaper._id);
     } catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
@@ -565,7 +568,53 @@ app.get('/testmaster/api/questionpapers', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
     }
-})
+});
+
+app.get('/testmaster/api/questionpapers/:questionPaperId', async (req, res) => {
+    try {
+        const questionPaperId = req.params.questionPaperId;
+
+        // Fetch the question paper data based on questionPaperId (you can replace this with your database query)
+        const questionPaper = await QuestionPaper.findById(questionPaperId).exec();
+
+        if (!questionPaper) {
+            // Handle the case where the question paper is not found
+            return res.status(404).json({ error: 'Question Paper not found' });
+        }
+        const questions = await Question.find({ questionId: { $in: questionPaper.questionIds } }).exec();
+        // Return the question paper data as JSON
+        // res.json(questionPaper);
+        res.render('questionpaperdetails', { questionPaper, questions });
+
+
+    } catch (error) {
+        console.error('Error fetching question paper data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.get('/testmaster/api/questionpapersdetails/:questionPaperId', async (req, res) => {
+    try {
+        const questionPaperId = req.params.questionPaperId;
+
+        // Fetch the question paper data based on questionPaperId (you can replace this with your database query)
+        const questionPaper = await QuestionPaper.findById(questionPaperId).exec();
+
+        if (!questionPaper) {
+            // Handle the case where the question paper is not found
+            return res.status(404).json({ error: 'Question Paper not found' });
+        }
+        const questions = await Question.find({ questionId: { $in: questionPaper.questionIds } }).exec();
+        // Return the question paper data as JSON
+        // res.json(questionPaper);
+        res.render('questionpaperdetails.ejs', { questionPaper, questions });
+
+    } catch (error) {
+        console.error('Error fetching question paper data:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 
 
 app.delete("/testmaster/api/questions/:id", async (req, res) => {
@@ -620,31 +669,87 @@ app.post("/next", (req, res) => {
 
 router.get('/questions-by-ids', async (req, res) => {
     try {
-      // Get the array of questionIds from the request query
-      const { questionIds } = req.query;
-      console.log(questionIds)
-  
-      if (!questionIds) {
-        return res.status(400).json({ error: 'Missing questionIds parameter' });
-      }
-  
-      const ids = questionIds.split(',').map((id) => parseInt(id, 10));
-  
-      const questions = await Question.find({ questionId: { $in: ids } });
-  
-      const result = questions.map((question) => ({
-        questionId: question.questionId,
-        questionTitle: question.questionTitle,
-        questionDescription: question.questionDescription,
-      }));
-  
-      res.json(result);
+        // Get the array of questionIds from the request query
+        const { questionIds } = req.query;
+        console.log(questionIds)
+
+        if (!questionIds) {
+            return res.status(400).json({ error: 'Missing questionIds parameter' });
+        }
+
+        const ids = questionIds.split(',').map((id) => parseInt(id, 10));
+
+        const questions = await Question.find({ questionId: { $in: ids } });
+
+        const result = questions.map((question) => ({
+            questionId: question.questionId,
+            questionTitle: question.questionTitle,
+            questionDescription: question.questionDescription,
+        }));
+
+        res.json(result);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'Internal Server Error' });
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-  });
-  
+});
+
+app.get('/editquestionspapers/:questionPaperId', async (req, res) => {
+    try {
+        const questionPaperId = req.params.questionPaperId;
+        const questionPaper = await QuestionPaper.findById(questionPaperId).exec();
+
+        if (!questionPaper) {
+            // Handle the case where the question paper is not found
+            return res.status(404).send('Question Paper not found');
+        }
+
+        // Fetch questions based on questionIds
+        const questions = await Question.find({ questionId: { $in: questionPaper.questionIds } }).exec();
+
+        res.render('editquestionspapers.ejs', { questionPaper, questions });
+    } catch (error) {
+        console.error('Error rendering edit question paper page:', error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.put('/testmaster/api/questionpapers/:questionPaperId', async (req, res) => {
+    try {
+        const questionPaperId = req.params.questionPaperId;
+        const updatedData = req.body;
+
+        const updatedQuestionPaper = await QuestionPaper.findByIdAndUpdate(questionPaperId, updatedData, { new: true });
+
+        if (!updatedQuestionPaper) {
+            // Handle the case where the question paper is not found
+            return res.status(404).send('Question Paper not found');
+        }
+
+        res.json(updatedQuestionPaper);
+    } catch (error) {
+        console.error('Error updating question paper:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+app.delete('/testmaster/api/questionpapers/:questionPaperId',async (req, res) => {
+    try{
+        const questionPaperId = req.params.questionPaperId;
+
+        const deletedQuestionPaper = await QuestionPaper.findByIdAndDelete(questionPaperId);
+
+        if(!deletedQuestionPaper){
+            return res.status(404).send('Question Paper not found');
+        }
+        res.status(204).send();
+    }catch (error) {
+        console.error('Error deleting question paper:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

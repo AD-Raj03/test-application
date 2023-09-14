@@ -58,10 +58,10 @@
                 <hr />
 
                 <!-- Add Questions Button -->
-                <button id="addQuestionsButton" class="btn btn-success mt-3">Add Questions</button>
+                <!-- <button id="addQuestionsButton" class="btn btn-success mt-3">Add Questions</button> -->
 
                 <!-- Questions Table -->
-                <table class="table mt-3">
+                <!-- <table class="table mt-3">
                     <thead>
                         <tr>
                             <th>S. No.</th>
@@ -70,10 +70,10 @@
                             <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="questionsTableBody">
-                        <!-- Questions will be rendered here -->
-                    </tbody>
-                </table>
+                    <tbody id="questionsTableBody"> -->
+                <!-- Questions will be rendered here -->
+                <!-- </tbody>
+                </table> -->
             </div>
         </div>
     </div>
@@ -86,62 +86,62 @@
     <!-- Your JavaScript Code -->
     <script>
         // Function to render questions based on questionIds
-        function renderQuestions() {
-            const savedSelectedQuestionIds = JSON.parse(localStorage.getItem("selectedQuestionIds"));
-            const questionsTableBody = document.getElementById("questionsTableBody");
+        // function renderQuestions() {
+        //     const savedSelectedQuestionIds = JSON.parse(localStorage.getItem("selectedQuestionIds"));
+        //     const questionsTableBody = document.getElementById("questionsTableBody");
 
-            if (savedSelectedQuestionIds && savedSelectedQuestionIds.length > 0) {
-                // Convert the selectedQuestionIds array to a comma-separated string
-                const questionIds = savedSelectedQuestionIds.join(',');
+        //     if (savedSelectedQuestionIds && savedSelectedQuestionIds.length > 0) {
+        //         // Convert the selectedQuestionIds array to a comma-separated string
+        //         const questionIds = savedSelectedQuestionIds.join(',');
 
-                // Make an HTTP GET request to your API
-                fetch(`http://localhost:3000/api/questions-by-ids?questionIds=${questionIds}`)
-                    .then((response) => response.json())
-                    .then((data) => {
-                        // Render the data in the table
-                        if (data && data.length > 0) {
-                            questionsTableBody.innerHTML = data.map((question, index) => {
-                                return `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${question.questionTitle}</td>
-                                <td>${question.questionDescription}</td>
-                                <td>
-                                    <button class="btn btn-danger" onclick="deleteQuestion(${question.questionId})">Delete</button>
-                                </td>
-                            </tr>
-                        `;
-                            }).join("");
-                        } else {
-                            questionsTableBody.innerHTML = "<tr><td colspan='4'>No questions found</td></tr>";
-                        }
-                    })
-                    .catch((error) => {
-                        console.error("Error fetching questions:", error);
-                        questionsTableBody.innerHTML = "<tr><td colspan='4'>Error fetching questions</td></tr>";
-                    });
-            } else {
-                questionsTableBody.innerHTML = "<tr><td colspan='4'>No questions selected</td></tr>";
-            }
-        }
+        //         // Make an HTTP GET request to your API
+        //         fetch(`http://localhost:3000/api/questions-by-ids?questionIds=${questionIds}`)
+        //             .then((response) => response.json())
+        //             .then((data) => {
+        //                 // Render the data in the table
+        //                 if (data && data.length > 0) {
+        //                     questionsTableBody.innerHTML = data.map((question, index) => {
+        //                         return `
+        //                     <tr>
+        //                         <td>${index + 1}</td>
+        //                         <td>${question.questionTitle}</td>
+        //                         <td>${question.questionDescription}</td>
+        //                         <td>
+        //                             <button class="btn btn-danger" onclick="deleteQuestion(${question.questionId})">Delete</button>
+        //                         </td>
+        //                     </tr>
+        //                 `;
+        //                     }).join("");
+        //                 } else {
+        //                     questionsTableBody.innerHTML = "<tr><td colspan='4'>No questions found</td></tr>";
+        //                 }
+        //             })
+        //             .catch((error) => {
+        //                 console.error("Error fetching questions:", error);
+        //                 questionsTableBody.innerHTML = "<tr><td colspan='4'>Error fetching questions</td></tr>";
+        //             });
+        //     } else {
+        //         questionsTableBody.innerHTML = "<tr><td colspan='4'>No questions selected</td></tr>";
+        //     }
+        // }
 
 
 
-        document.getElementById("addQuestionsButton").addEventListener("click", function () {
+        // document.getElementById("addQuestionsButton").addEventListener("click", function () {
 
-            window.location.href = "/questions-list";
-        });
+        //     window.location.href = "/questions-list";
+        // });
 
         // Initial render of questions
-        renderQuestions();
+        // renderQuestions();
 
         function createQuestionPaper() {
-            const savedSelectedQuestionIds = JSON.parse(localStorage.getItem("selectedQuestionIds"));
+            // const savedSelectedQuestionIds = JSON.parse(localStorage.getItem("selectedQuestionIds"));
 
-            if (!savedSelectedQuestionIds || savedSelectedQuestionIds.length === 0) {
-                alert("Please add questions to the question paper.");
-                return;
-            }
+            // if (!savedSelectedQuestionIds || savedSelectedQuestionIds.length === 0) {
+            //     alert("Please add questions to the question paper.");
+            //     return;
+            // }
 
             const questionPaperTitle = document.getElementById("questionPaperTitle").value;
             const description = document.getElementById("description").value;
@@ -151,7 +151,6 @@
                 questionPaperTitle,
                 description,
                 minimumNumberForPassing,
-                questionIds: savedSelectedQuestionIds,
             };
 
             fetch("http://localhost:3000/testmaster/api/questionpapers", {
@@ -163,15 +162,21 @@
             })
                 .then((response) => response.json())
                 .then((data) => {
-                    // Handle the response here, e.g., display a success message
                     console.log("Question paper created successfully:", data);
-                    localStorage.removeItem("selectedQuestionIds");
-                    window.location.href = '/testmaster/api/questionpapers';
+                    // localStorage.removeItem("selectedQuestionIds");
+                    // window.location.href = '/testmaster/api/questionpapers';
+
+                    // Assuming the server responds with the newly created questionPaperId
+                    const questionPaperId = data;
+                    console.log(questionPaperId)
+                    localStorage.setItem('questionPaperId',questionPaperId);
+                    // Redirect to the Question Paper Details page with the questionPaperId as a query parameter
+                     window.location.href = `/testmaster/api/questionpapersdetails/${questionPaperId}`;
 
                 })
                 .catch((error) => {
                     console.error("Error creating question paper:", error);
-                    // Handle the error, display an error message, etc.
+
                 });
         }
 
