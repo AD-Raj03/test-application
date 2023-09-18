@@ -1,9 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Question</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <!-- Include Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -13,84 +17,121 @@
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
+        <div class="collapse navbar-collapse " id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link " href="/results">Results</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link " href="/upload">Create Questions</a>
+                    <a class="nav-link" href="/testmaster/api/questionpapers">Question Papers </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link  " href="/questions-list">Questions</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/testmaster/api/questionpapers">Question Papers</a>
+                    <a class="nav-link " href="/upload">Create Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="/results">Results</a>
                 </li>
             </ul>
         </div>
     </nav>
+    <div class="container">
+        <h3 class=" text-center  m-2 ">Edit Question</h3>
+        <div class="row justify-content-center ">
+            <div class="col col-lg-6 p-3 rounded rounded-2  shadow mb-5 ">
 
-    <div class="container mt-4  ">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 shadow p-3 " >
-                <h3 class="text-center">Edit Question</h3>
 
-                <form id="edit-question-form" method="POST" action="/testmaster/api/questions/<%= questionData.questionId %>">
-                    <input type="hidden" name="_method" value="PUT">
+                <% if (questionData) { %>
+                    <form action="http://localhost:3000/testmaster/api/update-question/<%= questionData._id %>"
+                        method="POST" enctype="application/x-www-form-urlencoded">
 
-                    <div class="form-group">
-                        <label for="questionTitle">Question Title</label>
-                        <input type="text" class="form-control" id="questionTitle" name="questionTitle" value="<%= questionData.questionTitle %>" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="questionDescription">Question Description</label>
-                        <textarea class="form-control" id="questionDescription" name="questionDescription" rows="1"><%= questionData.questionDescription %></textarea>
-                    </div>
-                    <div class="form-group">
-                        <img id="questionImage" src="/uploads/<%= questionData.image %>" alt="Image" class="img-fluid mb-3" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="questionTags">Question Tags</label>
-                        <input type="text" class="form-control" id="questionTags" name="questionTags" value="<%= questionData.questionTags %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="question-image" class="btn btn-primary btn-block btn-outlined">Upload Question
-                            Image</label>
-                        <input type="file" class="form-control-file" id="question-image" name="image" accept="image/*"
-                            style="display: none;">
-                    </div>
-
-                    <div class="form-group row">
-                        <label class="col-sm-3 col-form-label">Question Type:</label>
-                        <div class="col-sm-auto">
-                            <div class="form-check form-check-inline">
-                                <input type="radio" class="form-check-input" id="multichoice" name="questionType"
-                                    value="multichoice" <%= questionData.questionType === 'multichoice' ? 'checked' : '' %>>
-                                <label class="form-check-label" for="multichoice">Multichoice</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input type="radio" class="form-check-input" id="singlechoice" name="questionType"
-                                    value="singlechoice" <%= questionData.questionType === 'singlechoice' ? 'checked' : '' %>>
-                                <label class="form-check-label" for="singlechoice">Single Choice</label>
-                            </div>
+                        <div class="form-group">
+                            <label for="questionTitle">Question Title:</label>
+                            <input type="text" class="form-control" id="questionTitle" name="questionTitle"
+                                value="<%= questionData.questionTitle %>">
                         </div>
-                    </div>
 
-                    
+                        <div class="form-group">
+                            <label for="questionDescription">Question Description:</label>
+                            <textarea class="form-control" id="questionDescription" name="questionDescription" rows="1"
+                                cols="50"><%= questionData.questionDescription %></textarea>
+                        </div>
 
-                    <button type="submit" class="btn btn-success">Update</button>
-                </form>
+                        <!-- <div class="form-group">
+                        <label for="image">Image URL:</label>
+                        <input type="text" class="form-control" id="image" name="image" value="<%= questionData.image %>">
+                    </div> -->
+                        <!-- <div class="form-group">
+                            <label for="question-image" class="btn btn-primary btn-block btn-outlined">Update Question
+                                Image</label>
+                            <input type="file" class="form-control-file" id="question-image" name="image"
+                                accept="image/*" style="display: none;" required>
+                        </div> -->
+
+                        <div class="form-group">
+                            <label for="correctOptions">Correct Options:</label>
+                            <input type="text" class="form-control" id="correctOptions" name="correctOptions"
+                                value="<%= questionData.correctOptions.join(', ') %>" readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="label m-0 ">Question Type:</label>
+
+                            <div class="form-check form-check-inline m-3">
+                                <input class="form-check-input" type="radio" name="questionType" id="multipleChoice"
+                                    value="multichoice" <% if (questionData.questionType==='multichoice' ) { %>checked<%
+                                    } %>>
+                                    <label class="form-check-label" for="multipleChoice">Multiple Choice</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="questionType" id="singleChoice"
+                                    value="singlechoice" <% if (questionData.questionType==='singlechoice' ) { %>checked
+                                <% } %>>
+                                    <label class="form-check-label" for="singleChoice">Single Choice</label>
+                            </div>
+
+                        </div>
+
+
+
+                        <div class="form-group">
+                            <label for="questionTags">Question Tags:</label>
+                            <input type="text" class="form-control" id="questionTags" name="questionTags"
+                                value="<%= questionData.questionTags %>">
+                        </div>
+
+
+                        <% for (let i = 0; i < questionData.options.length; i++) { %>
+                            <div class="form-group row m-1">
+                                <label for="option<%= i %>">Option <%= i + 1 %>:</label>
+                                <div class="col-sm-7">
+                                    <input type="text" class="form-control" id="option<%= i %>"
+                                        name="options[<%= i %>][text]" value="<%= questionData.options[i].text %>">
+                                </div>
+                                <div class="col-sm-auto">
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="isCorrect<%= i %>"
+                                            name="options[<%= i %>][isCorrect]" <% if (questionData.options[i].isCorrect === true) { %>checked<% } %>>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+                        
+
+                                <button type="submit" class="btn btn-primary mt-3">Update Question</button>
+                    </form>
+                    <% } else { %>
+                        <p class="mt-3">Question not found.</p>
+                        <% } %>
             </div>
         </div>
     </div>
 
+
+
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 </body>
 
 </html>

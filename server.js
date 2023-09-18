@@ -8,7 +8,7 @@ const session = require("express-session");
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const router = express.Router();
-
+const nodemailer = require('nodemailer');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -70,7 +70,7 @@ app.get("/addquestionpaper", (req, res) => {
 
 
 app.get("/", (req, res) => {
-    res.render("candidatelogin");
+    res.redirect("/testmaster/api/questionpapers");
 });
 
 const questionSchema = new mongoose.Schema({
@@ -81,6 +81,7 @@ const questionSchema = new mongoose.Schema({
     },
     questionTitle: String,
     questionDescription: String,
+    questionDifficulty: String,
     image: String,
     correctOptions: [String],
     questionType: String,
@@ -103,8 +104,11 @@ const user = new mongoose.Schema({
 const User = mongoose.model("User", user);
 
 const candidateSchema = new mongoose.Schema({
+    name: String,
     email: String,
     securityCode: Number,
+    examDate: Date,
+    questionPaperId: String,
     isActive: Boolean,
 });
 
@@ -160,28 +164,151 @@ const questionPaperSchema = new mongoose.Schema({
 
 const QuestionPaper = mongoose.model('QuestionPaper', questionPaperSchema);
 
+// const transporter = nodemailer.createTransport({
+//     service: 'Gmail',
+//     auth: {
+//         user: 'sandeep.cdac.sep.2209@gmail.com', // Your email address
+//         pass: 'random'   // Your email password or an app-specific password
+//     }
+// });
 
-app.post("/candidates", async (req, res) => {
+//-------------------------------------------------
+// Route to display the candidate login form
+app.get('/testmaster/exam', (req, res) => {
+    res.render('candidatelogincopy'); // Assuming you have a "login.ejs" template
+  });
+//------------------------------------------------
+// Route to verify and update the candidate and get question data
+app.post('/testmaster/api/exam', async (req, res) => {
     try {
-        const { email, securityCode } = req.body;
-        const isActive = true;
+      const { email, securityCode } = req.body;
+  
+    //   console.log(email, securityCode);
+      const candidate = await Candidate.findOne({
+        email,
+        securityCode,
+        isActive: true, // Make sure the candidate is active
+      });
+      if (candidate) {
+        console.log('verified')
+      }
+  
+      if (!candidate) {
+        return res.status(404).json({ message: 'Candidate not found or not active.' });
+      }
+  
+      const questionPaperId = candidate.questionPaperId;
+  
+      //console.log(questionPaperId);
 
+      const questionPaper = await QuestionPaper.findOne({ _id: questionPaperId });
+
+       //console.log(questionPaper)
+  
+      if (!questionPaper) {
+        return res.status(404).json({ message: 'Question paper not found.' });
+      }
+  
+      const questionIds = questionPaper.questionIds;
+  
+       //console.log(questionIds)
+
+      
+      const questions = await Question.find({ questionId: { $in: questionIds } });
+  
+      // console.log(questions)
+
+      const questionData = questions.map(question => {
+
+        const options = question.options.map(option => {
+            // Create a new option object with only the 'text' property
+            return { text: option.text };
+          });
+        return {
+           questionId: question.questionId,
+          questionTitle: question.questionTitle,
+           questionDescription: question.questionDescription,
+          image: question.image,
+          
+          questionType: question.questionType,
+           questionTags: question.questionTags,
+          options: options,
+        };
+      });
+      
+      
+      // Update the candidate to set isActive to false
+     // await Candidate.findByIdAndUpdate(candidate._id, { isActive: false });
+  
+      // Return the question data
+      res.render('exampapercopy', {questionData} );  // Assuming you have an "exampape" EJS template
+    } catch (error) {
+      console.error('Error:', error);
+      return res.status(500).json({ message: 'Internal Server Error' });
+    }
+  });
+  
+//------------------------------------------------
+
+app.post("/testmaster/api/candidates/:questionPaperId", async (req, res) => {
+    try {
+        
+        const securityCode = Math.floor(100000 + Math.random() * 900000);
+
+       
+        const {name, email, examDate } = req.body;
+
+       
+        const { questionPaperId } = req.params;
+
+       
         const candidate = new Candidate({
+            name,
             email,
             securityCode,
-            isActive: isActive,
+            examDate,
+            questionPaperId,
+            isActive: true,
         });
 
         await candidate.save();
 
-        res
-            .status(201)
-            .json({ success: true, message: "Candidate data saved successfully" });
+        // const mailOptions = {
+        //     from: 'sandeep.cdac.sep.2209@gmail.com', 
+        //     to: email,
+        //     subject: 'Your Security Code',
+        //     text: `Hello ${name}, your security code is: ${securityCode}`
+        // };
+
+        // transporter.sendMail(mailOptions, (error, info) => {
+        //     if (error) {
+        //         console.error("Error sending email:", error);
+        //         res.status(500).json({ success: false, message: "Internal server error" });
+        //     } else {
+        //         console.log("Email sent:", info.response);
+        //         res.status(201).json({ success: true, message: "Candidate data saved successfully" });
+        //     }
+        // });
+
+        res.status(201).json({ success: true, message: "Candidate data saved successfully" });
     } catch (error) {
         console.error("Error saving candidate data:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
 });
+
+app.get('/testmaster/api/candidates/:questionPaperId', (req, res) => {
+    try {
+       
+        const { questionPaperId } = req.params;
+
+        res.render('candidateregistration', { questionPaperId });
+    } catch (error) {
+        console.error('Error rendering candidate registration page:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
 
 // candidate credential verification api
 app.post("/candidate-login", async (req, res) => {
@@ -193,7 +320,7 @@ app.post("/candidate-login", async (req, res) => {
 
         if (candidate.isActive) {
 
-            // await Candidate.findOneAndUpdate({ email: candidate.email }, { isActive: false });
+             await Candidate.findOneAndUpdate({ email: candidate.email }, { isActive: false });
             res.redirect("/testmaster/api/exampaper");
         } else {
             res.status(400).json({ success: false, message: "Please enter correct email and security code" });
@@ -215,7 +342,9 @@ app.post("/testmaster/api/save-response", async (req, res) => {
         endTime,
         responses,
     } = req.body;
-    console.log('1', startTime);
+
+    console.log('1..........responses',responses);
+   
 
     const currentTestDate = new Date(testDate);
     const day = currentTestDate.getDate();
@@ -239,7 +368,7 @@ app.post("/testmaster/api/save-response", async (req, res) => {
     // console.log("formattedStartTime",formattedStartTime);
 
     const formattedEndTime = await formatTime(endTime)
-    console.log("formattedEndTime", formattedEndTime);
+  
     //console.log(attemptedQuestion);
     const responseDocument = new Response({
         testName,
@@ -334,6 +463,7 @@ async function incrementAttemptedQuestion(emailId) {
 async function calculateResult(emailId) {
     try {
         const responseData = await Response.findOne({ emailId });
+       // console.log('response data',responseData)
 
         if (!responseData || !responseData.responses || !Array.isArray(responseData.responses)) {
             console.warn(`Invalid response data for emailId ${emailId}.`);
@@ -347,6 +477,7 @@ async function calculateResult(emailId) {
             try {
 
                 const question = await Question.findOne({ questionId: response.questionId });
+                //console.log('question fetched with question ids from response collections',question)
 
                 if (!question) {
                     console.warn(`Question with ID ${response.questionId} not found.`);
@@ -355,7 +486,9 @@ async function calculateResult(emailId) {
 
 
                 const correctOptions = question.correctOptions.sort();
+                console.log('correctOptions',correctOptions);
                 const selectedOptions = response.selectedOptions.sort();
+                console.log('selectedOptions',selectedOptions)
 
                 if (JSON.stringify(correctOptions) === JSON.stringify(selectedOptions)) {
                     correctAnswer++;
@@ -395,7 +528,7 @@ app.get('/results', async (req, res) => {
 
         const results = await Result.find().sort({ endTime: -1 });
 
-        res.render('result', { results });
+        res.render('result', { results , req});
     } catch (error) {
         console.error('Error fetching results:', error);
         res.status(500).send('Internal Server Error');
@@ -450,6 +583,7 @@ app.post("/upload", upload.single("image"), async (req, res) => {
         questionId: newQuestionId,
         questionTitle: questionData.questionTitle,
         questionDescription: questionData.questionDescription,
+        questionDifficulty : questionData.questionDifficulty,
         correctOptions: correctOptions,
         image: imageFileName,
         questionType: questionData.questionType,
@@ -468,13 +602,15 @@ app.post("/upload", upload.single("image"), async (req, res) => {
     }
 });
 
+
+
 app.get('/testmaster/api/edit-question/:questionId', async (req, res) => {
     try {
         const questionId = req.params.questionId;
-
+        
 
         const questionData = await Question.findOne({ questionId });
-
+        console.log(questionData._id)
         if (!questionData) {
 
             return res.status(404).json({ message: "Question not found" });
@@ -489,29 +625,67 @@ app.get('/testmaster/api/edit-question/:questionId', async (req, res) => {
 });
 
 
-
-app.put("/testmaster/api/questions/:questionId", async (req, res) => {
+app.post('/testmaster/api/update-question/:questionId',upload.single("image"), async (req, res) => {
     try {
         const questionId = req.params.questionId;
-        const updateData = req.body;
+        console.log('api hit', questionId)
 
+        console.log(req.body.options);
+        const options = req.body.options.map(option => ({
+           
+            text: option.text,
+            isCorrect: option.isCorrect === 'on' 
+        }));
 
-        const updatedQuestion = await Question.findOneAndUpdate(
-            { questionId },
-            updateData,
-            { new: true }
-        );
-
+        const correctOptions = options
+    .filter(option => option.isCorrect)
+    .map(option => option.text);
+        
+        const updatedQuestion = await Question.findByIdAndUpdate(questionId, {
+            questionTitle: req.body.questionTitle,
+            questionDescription: req.body.questionDescription,
+            image: req.body.image,
+            correctOptions: correctOptions,
+            questionType: req.body.questionType,
+            questionTags: req.body.questionTags,
+            options: options,
+        }, { new: true }); 
+        
         if (!updatedQuestion) {
-            return res.status(404).json({ message: "Question not found" });
+            return res.status(404).json({ success: false, message: 'Question not found' });
         }
 
-        return res.json(updatedQuestion);
+        
+        res.status(200).json({ success: true, message: 'Question updated successfully', updatedQuestion });
     } catch (error) {
-        console.error("Error updating question:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        console.error('Error updating question:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
 });
+
+
+// app.put("/testmaster/api/questions/:questionId", async (req, res) => {
+//     try {
+//         const questionId = req.params.questionId;
+//         const updateData = req.body;
+
+
+//         const updatedQuestion = await Question.findOneAndUpdate(
+//             { questionId },
+//             updateData,
+//             { new: true }
+//         );
+
+//         if (!updatedQuestion) {
+//             return res.status(404).json({ message: "Question not found" });
+//         }
+
+//         return res.json(updatedQuestion);
+//     } catch (error) {
+//         console.error("Error updating question:", error);
+//         return res.status(500).json({ message: "Internal Server Error" });
+//     }
+// });
 
 
 app.get("/questions-list", async (req, res) => {

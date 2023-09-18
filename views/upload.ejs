@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Question Creator</title>
+    <title>Create Question</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 
@@ -16,16 +16,16 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link " href="/results">Results</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link " href="/upload">Create Questions</a>
+                    <a class="nav-link" href="/testmaster/api/questionpapers">Question Papers </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link  " href="/questions-list">Questions</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/testmaster/api/questionpapers">Question Papers</a>
+                    <a class="nav-link " href="/upload">Create Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="/results">Results</a>
                 </li>
             </ul>
         </div>
@@ -51,6 +51,13 @@
                         <label for="question-tags">Tags<i>(Note:Tags should be -> JAVA, AWS, SPRING etc.)</i></label>
                         <input class="form-control" id="question-tags" name="questionTags" required></input>
                     </div>
+                    <select class="form-select form-select-sm mb-2 " id="question-difficulty" name="questionDifficulty" aria-label=".form-select-sm example">
+                        <option selected>Question Difficulty</option>
+                        <option id="question-difficulty" name="questionDifficulty" value="Easy">Easy</option>
+                        <option id="question-difficulty" name="questionDifficulty" value="Medium">Medium</option>
+                        <option id="question-difficulty" name="questionDifficulty" value="Hard">Hard</option>
+                      </select>
+
                     <div class="form-group">
                         <label for="question-image" class="btn btn-primary btn-block btn-outlined">Upload Question
                             Image</label>
@@ -181,6 +188,7 @@
             questionData.questionDescription = formData.get('questionDescription').toUpperCase();
             questionData.questionType = formData.get('questionType');
             questionData.questionTags = formData.get('questionTags').toUpperCase();
+            questionData.questionDifficulty = formData.get('questionDifficulty');
 
 
 

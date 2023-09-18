@@ -7,7 +7,13 @@
     <title>Test Results</title>
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-   
+
+    <style>
+        .table-sm th,
+        .table-sm td {
+            font-size: 14px;
+        }
+    </style>
 </head>
 
 <body>
@@ -20,29 +26,28 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link " href="/results">Results</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link " href="/upload">Create Questions</a>
+                    <a class="nav-link" href="/testmaster/api/questionpapers">Question Papers </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link  " href="/questions-list">Questions</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/testmaster/api/questionpapers">Question Papers </a>
+                    <a class="nav-link " href="/upload">Create Questions</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link " href="/results">Results</a>
                 </li>
             </ul>
         </div>
     </nav>
 
-
     <div class="container">
-        <div class="input-group mb-3 mt-3 shadow ">
+        <div class="input-group mb-3 mt-3 shadow">
             <input type="text" id="searchInput" class="form-control col-12" placeholder="Search results...">
         </div>
         <h3>Test Results</h3>
-        <div class="table-responsive shadow ">
-            <table class="table table-bordered">
+        <div class="table-responsive shadow">
+            <table class="table table-bordered table-striped table-sm">
                 <thead>
                     <tr>
                         <th>Test Name</th>
@@ -63,63 +68,71 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% results.forEach(result=> { %>
+                    <% const pageSize = 10; %>
+                    <% const pageCount = Math.ceil(results.length / pageSize); %>
+                    <% const currentPage = req.query.page || 1; %>
+                    <% const startIndex = (currentPage - 1) * pageSize; %>
+                    <% const endIndex = Math.min(startIndex + pageSize, results.length); %>
+                    <% for (let i = startIndex; i < endIndex; i++) { %>
                         <tr>
-                            <td>
-                                <%= result.testName %>
-                            </td>
-                            <td>
-                                <%= result.name %>
-                            </td>
-                            <td>
-                                <%= result.emailId %>
-                            </td>
-                            <td>
-                                <%= result.testDate %>
-                            </td>
-                            <td>
-                                <%= result.testDuration %>
-                            </td>
-                            <td>
-                                <%= result.startTime %>
-                            </td>
-                            <td>
-                                <%= result.endTime %>
-                            </td>
-                            <td>
-                                <%= result.timeTaken %>
-                            </td>
-                            <td>
-                                <%= result.currentStatus %>
-                            </td>
-                            <td>
-                                <%= result.totalQuestion %>
-                            </td>
-                            <td>
-                                <%= result.attemptedQuestoin %>
-                            </td>
-                            <td>
-                                <%= result.correctCount %>
-                            </td>
-                            <td>
-                                <%= result.wrongCount %>
-                            </td>
-                            <td>
-                                <%= result.skippedQuestions %>
-                            </td>
-                            <td>
-                                <%= result.result %>
-                            </td>
+                            <td><%= results[i].testName %></td>
+                            <td><%= results[i].name %></td>
+                            <td><%= results[i].emailId %></td>
+                            <td><%= results[i].testDate %></td>
+                            <td><%= results[i].testDuration %></td>
+                            <td><%= results[i].startTime %></td>
+                            <td><%= results[i].endTime %></td>
+                            <td><%= results[i].timeTaken %></td>
+                            <td><%= results[i].currentStatus %></td>
+                            <td><%= results[i].totalQuestion %></td>
+                            <td><%= results[i].attemptedQuestoin %></td>
+                            <td><%= results[i].correctCount %></td>
+                            <td><%= results[i].wrongCount %></td>
+                            <td><%= results[i].skippedQuestions %></td>
+                            <td><%= results[i].result %></td>
                         </tr>
-                        <% }); %>
+                    <% } %>
                 </tbody>
             </table>
         </div>
+
+        <!-- Pagination -->
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                <% for (let i = 1; i <= pageCount; i++) { %>
+                    <li class="page-item <%= i == currentPage ? 'active' : '' %>">
+                        <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+                    </li>
+                <% } %>
+            </ul>
+        </nav>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+         $(document).ready(function () {
+            // Function to filter table rows based on the search input
+            function filterTable(query) {
+                const rows = $('tbody tr');
+                rows.hide();
+                rows.each(function () {
+                    const row = $(this);
+                    const rowData = row.text().toLowerCase();
+                    if (rowData.includes(query.toLowerCase())) {
+                        row.show();
+                    }
+                });
+            }
+
+            // Listen for changes in the search input
+            $('#searchInput').on('input', function () {
+                const searchTerm = $(this).val();
+                filterTable(searchTerm);
+            });
+        });
+    </script>
 </body>
 
 </html>
