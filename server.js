@@ -31,6 +31,32 @@ mongoose.connect(
         useUnifiedTopology: true,
     }
 );
+//--------------------------------------------
+const { google } = require('googleapis');
+const { OAuth2Client } = require('google-auth-library');
+
+// Replace with your client ID and client secret
+const CLIENT_ID = "";
+const CLIENT_SECRET = "";
+const REDIRECT_URI = 'http://localhost:3000/auth/gmail/callback'; // Should match the one you configured in the Cloud Console
+
+const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+
+oauth2Client.setCredentials({
+    access_token: '',
+    refresh_token: '',
+  });
+
+const gmail = google.gmail({
+    version: 'v1',
+    auth: oauth2Client,
+  });
+
+
+
+//----------------------------------------------
+
+
 
 const storage = multer.diskStorage({
     destination: "./public/uploads/",
@@ -158,6 +184,7 @@ const Result = mongoose.model("Result", resultSchema);
 const questionPaperSchema = new mongoose.Schema({
     questionPaperTitle: String,
     description: String,
+    time: String,
     minimumNumberForPassing: Number,
     questionIds: [Number],
 });
@@ -173,95 +200,103 @@ const QuestionPaper = mongoose.model('QuestionPaper', questionPaperSchema);
 // });
 
 //-------------------------------------------------
-// Route to display the candidate login form
+
 app.get('/testmaster/exam', (req, res) => {
-    res.render('candidatelogincopy'); // Assuming you have a "login.ejs" template
-  });
+    res.render('candidatelogincopy'); 
+});
 //------------------------------------------------
 // Route to verify and update the candidate and get question data
 app.post('/testmaster/api/exam', async (req, res) => {
     try {
-      const { email, securityCode } = req.body;
-  
-    //   console.log(email, securityCode);
-      const candidate = await Candidate.findOne({
-        email,
-        securityCode,
-        isActive: true, // Make sure the candidate is active
-      });
-      if (candidate) {
-        console.log('verified')
-      }
-  
-      if (!candidate) {
-        return res.status(404).json({ message: 'Candidate not found or not active.' });
-      }
-  
-      const questionPaperId = candidate.questionPaperId;
-  
-      //console.log(questionPaperId);
+        const { email, securityCode } = req.body;
 
-      const questionPaper = await QuestionPaper.findOne({ _id: questionPaperId });
+        //   console.log(email, securityCode);
+        const candidate = await Candidate.findOne({
+            email,
+            securityCode,
+            isActive: true, // Make sure the candidate is active
+        });
+        if (candidate) {
+            console.log('verified')
+            console.log(candidate)
+        }
 
-       //console.log(questionPaper)
-  
-      if (!questionPaper) {
-        return res.status(404).json({ message: 'Question paper not found.' });
-      }
-  
-      const questionIds = questionPaper.questionIds;
-  
-       //console.log(questionIds)
+        const candidateName = candidate.name;
+        const candidateExamDate = candidate.examDate;
 
-      
-      const questions = await Question.find({ questionId: { $in: questionIds } });
-  
-      // console.log(questions)
+        if (!candidate) {
+            return res.status(404).json({ message: 'Candidate not found or not active.' });
+        }
 
-      const questionData = questions.map(question => {
+        const questionPaperId = candidate.questionPaperId;
 
-        const options = question.options.map(option => {
-            // Create a new option object with only the 'text' property
-            return { text: option.text };
-          });
-        return {
-           questionId: question.questionId,
-          questionTitle: question.questionTitle,
-           questionDescription: question.questionDescription,
-          image: question.image,
-          
-          questionType: question.questionType,
-           questionTags: question.questionTags,
-          options: options,
-        };
-      });
-      
-      
-      // Update the candidate to set isActive to false
-     // await Candidate.findByIdAndUpdate(candidate._id, { isActive: false });
-  
-      // Return the question data
-      res.render('exampapercopy', {questionData} );  // Assuming you have an "exampape" EJS template
+        //console.log(questionPaperId);
+
+        const questionPaper = await QuestionPaper.findOne({ _id: questionPaperId });
+
+        //console.log(questionPaper)
+
+        if (!questionPaper) {
+            return res.status(404).json({ message: 'Question paper not found.' });
+        }
+
+        const questionIds = questionPaper.questionIds;
+        const timeString  = questionPaper.time;
+        const time = parseInt(timeString.match(/\d+/)[0]);
+
+        const testName = questionPaper.questionPaperTitle;
+       // console.log('testname', testName)
+        //console.log(questionIds)
+
+
+        const questions = await Question.find({ questionId: { $in: questionIds } });
+
+        // console.log(questions)
+
+        const questionData = questions.map(question => {
+
+            const options = question.options.map(option => {
+                // Create a new option object with only the 'text' property
+                return { text: option.text };
+            });
+            return {
+                questionId: question.questionId,
+                questionTitle: question.questionTitle,
+                questionDescription: question.questionDescription,
+                image: question.image,
+
+                questionType: question.questionType,
+                questionTags: question.questionTags,
+                options: options,
+            };
+        });
+
+
+        // Update the candidate to set isActive to false
+        // await Candidate.findByIdAndUpdate(candidate._id, { isActive: false });
+
+        // Return the question data
+        res.render('exampapercopy', { questionData , time, testName, candidateName, candidateExamDate});  // Assuming you have an "exampape" EJS template
     } catch (error) {
-      console.error('Error:', error);
-      return res.status(500).json({ message: 'Internal Server Error' });
+        console.error('Error:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
     }
-  });
-  
+});
+
 //------------------------------------------------
 
 app.post("/testmaster/api/candidates/:questionPaperId", async (req, res) => {
     try {
-        
+
         const securityCode = Math.floor(100000 + Math.random() * 900000);
 
-       
-        const {name, email, examDate } = req.body;
 
-       
+        const { name, email, examDate } = req.body;
+
+
         const { questionPaperId } = req.params;
 
-       
+
         const candidate = new Candidate({
             name,
             email,
@@ -270,25 +305,36 @@ app.post("/testmaster/api/candidates/:questionPaperId", async (req, res) => {
             questionPaperId,
             isActive: true,
         });
+        //-------------------------------------------------------------
+        async function sendEmail() {
+            const message = `To: ${email}\r\n` +
+              'Subject: Assessment Test \r\n' +
+              'Content-Type: text/plain; charset=UTF-8\r\n\r\n' +
+              `Test Link : http://localhost:3000/testmaster/exam  , Email: ${email}  , SecurityCode: ${securityCode}`;
+          
+            try {
+              const response = await gmail.users.messages.send({
+                userId: 'me',
+                requestBody: {
+                  raw: Buffer.from(message).toString('base64'),
+                },
+              });
+          
+              console.log('Email sent:', response.data);
+            } catch (error) {
+              console.error('Error sending email:', error);
+            }
+          }
 
-        await candidate.save();
 
-        // const mailOptions = {
-        //     from: 'sandeep.cdac.sep.2209@gmail.com', 
-        //     to: email,
-        //     subject: 'Your Security Code',
-        //     text: `Hello ${name}, your security code is: ${securityCode}`
-        // };
+        //-------------------------------------------------------------
 
-        // transporter.sendMail(mailOptions, (error, info) => {
-        //     if (error) {
-        //         console.error("Error sending email:", error);
-        //         res.status(500).json({ success: false, message: "Internal server error" });
-        //     } else {
-        //         console.log("Email sent:", info.response);
-        //         res.status(201).json({ success: true, message: "Candidate data saved successfully" });
-        //     }
-        // });
+        const candidateCreated = await candidate.save();
+        if(candidateCreated){
+            sendEmail();
+        }
+
+        
 
         res.status(201).json({ success: true, message: "Candidate data saved successfully" });
     } catch (error) {
@@ -299,7 +345,7 @@ app.post("/testmaster/api/candidates/:questionPaperId", async (req, res) => {
 
 app.get('/testmaster/api/candidates/:questionPaperId', (req, res) => {
     try {
-       
+
         const { questionPaperId } = req.params;
 
         res.render('candidateregistration', { questionPaperId });
@@ -320,7 +366,7 @@ app.post("/candidate-login", async (req, res) => {
 
         if (candidate.isActive) {
 
-             await Candidate.findOneAndUpdate({ email: candidate.email }, { isActive: false });
+            await Candidate.findOneAndUpdate({ email: candidate.email }, { isActive: false });
             res.redirect("/testmaster/api/exampaper");
         } else {
             res.status(400).json({ success: false, message: "Please enter correct email and security code" });
@@ -343,15 +389,15 @@ app.post("/testmaster/api/save-response", async (req, res) => {
         responses,
     } = req.body;
 
-    console.log('1..........responses',responses);
-   
+    console.log('1..........responses', responses);
 
-    const currentTestDate = new Date(testDate);
-    const day = currentTestDate.getDate();
-    const month = currentTestDate.getMonth() + 1;
-    const year = currentTestDate.getFullYear();
 
-    const formattedTestDate = `${day}/${month}/${year}`;
+    // const currentTestDate = new Date(testDate);
+    // const day = currentTestDate.getDate();
+    // const month = currentTestDate.getMonth() + 1;
+    // const year = currentTestDate.getFullYear();
+
+    // const formattedTestDate = `${day}/${month}/${year}`;
 
     const timeDuration = endTime - startTime;
     const minutes = Math.floor(timeDuration / (1000 * 60));
@@ -368,13 +414,13 @@ app.post("/testmaster/api/save-response", async (req, res) => {
     // console.log("formattedStartTime",formattedStartTime);
 
     const formattedEndTime = await formatTime(endTime)
-  
+
     //console.log(attemptedQuestion);
     const responseDocument = new Response({
         testName,
         name,
         emailId,
-        testDate: formattedTestDate,
+        testDate,
         testDuration,
         startTime: formattedStartTime,
         endTime: formattedEndTime,
@@ -401,7 +447,7 @@ app.post("/testmaster/api/save-response", async (req, res) => {
             testName: testName,
             name: name,
             emailId: emailId,
-            testDate: formattedTestDate,
+            testDate: testDate,
             testDuration: testDuration,
             startTime: formattedStartTime,
             endTime: formattedEndTime,
@@ -463,7 +509,7 @@ async function incrementAttemptedQuestion(emailId) {
 async function calculateResult(emailId) {
     try {
         const responseData = await Response.findOne({ emailId });
-       // console.log('response data',responseData)
+        // console.log('response data',responseData)
 
         if (!responseData || !responseData.responses || !Array.isArray(responseData.responses)) {
             console.warn(`Invalid response data for emailId ${emailId}.`);
@@ -486,9 +532,9 @@ async function calculateResult(emailId) {
 
 
                 const correctOptions = question.correctOptions.sort();
-                console.log('correctOptions',correctOptions);
+                console.log('correctOptions', correctOptions);
                 const selectedOptions = response.selectedOptions.sort();
-                console.log('selectedOptions',selectedOptions)
+                console.log('selectedOptions', selectedOptions)
 
                 if (JSON.stringify(correctOptions) === JSON.stringify(selectedOptions)) {
                     correctAnswer++;
@@ -528,7 +574,7 @@ app.get('/results', async (req, res) => {
 
         const results = await Result.find().sort({ endTime: -1 });
 
-        res.render('result', { results , req});
+        res.render('result', { results, req });
     } catch (error) {
         console.error('Error fetching results:', error);
         res.status(500).send('Internal Server Error');
@@ -583,7 +629,7 @@ app.post("/upload", upload.single("image"), async (req, res) => {
         questionId: newQuestionId,
         questionTitle: questionData.questionTitle,
         questionDescription: questionData.questionDescription,
-        questionDifficulty : questionData.questionDifficulty,
+        questionDifficulty: questionData.questionDifficulty,
         correctOptions: correctOptions,
         image: imageFileName,
         questionType: questionData.questionType,
@@ -607,7 +653,7 @@ app.post("/upload", upload.single("image"), async (req, res) => {
 app.get('/testmaster/api/edit-question/:questionId', async (req, res) => {
     try {
         const questionId = req.params.questionId;
-        
+
 
         const questionData = await Question.findOne({ questionId });
         console.log(questionData._id)
@@ -625,22 +671,22 @@ app.get('/testmaster/api/edit-question/:questionId', async (req, res) => {
 });
 
 
-app.post('/testmaster/api/update-question/:questionId',upload.single("image"), async (req, res) => {
+app.post('/testmaster/api/update-question/:questionId', upload.single("image"), async (req, res) => {
     try {
         const questionId = req.params.questionId;
         console.log('api hit', questionId)
 
         console.log(req.body.options);
         const options = req.body.options.map(option => ({
-           
+
             text: option.text,
-            isCorrect: option.isCorrect === 'on' 
+            isCorrect: option.isCorrect === 'on'
         }));
 
         const correctOptions = options
-    .filter(option => option.isCorrect)
-    .map(option => option.text);
-        
+            .filter(option => option.isCorrect)
+            .map(option => option.text);
+
         const updatedQuestion = await Question.findByIdAndUpdate(questionId, {
             questionTitle: req.body.questionTitle,
             questionDescription: req.body.questionDescription,
@@ -649,13 +695,13 @@ app.post('/testmaster/api/update-question/:questionId',upload.single("image"), a
             questionType: req.body.questionType,
             questionTags: req.body.questionTags,
             options: options,
-        }, { new: true }); 
-        
+        }, { new: true });
+
         if (!updatedQuestion) {
             return res.status(404).json({ success: false, message: 'Question not found' });
         }
 
-        
+
         res.status(200).json({ success: true, message: 'Question updated successfully', updatedQuestion });
     } catch (error) {
         console.error('Error updating question:', error);
@@ -715,14 +761,15 @@ app.get("/questions", async (req, res) => {
 
 app.post('/testmaster/api/questionpapers', async (req, res) => {
     try {
-        const { questionPaperTitle, description, minimumNumberForPassing } = req.body;
+        const { questionPaperTitle, description, time, minimumNumberForPassing } = req.body;
 
-
+        const timeInMin = `${time}min`;
         const newQuestionPaper = new QuestionPaper({
             questionPaperTitle,
             description,
+            time:timeInMin,
             minimumNumberForPassing,
-           
+
         });
 
 
@@ -818,16 +865,16 @@ app.delete("/testmaster/api/questions/:id", async (req, res) => {
     }
 });
 
-app.get("/testmaster/api/exampaper", (req, res) => {
-    const imageFiles = fs.readdirSync("./public/uploads/");
-    let currentIndex = req.session.currentIndex || 0;
+// app.get("/testmaster/api/exampaper", (req, res) => {
+//     const imageFiles = fs.readdirSync("./public/uploads/");
+//     let currentIndex = req.session.currentIndex || 0;
 
-    currentIndex = (currentIndex + imageFiles.length) % imageFiles.length;
+//     currentIndex = (currentIndex + imageFiles.length) % imageFiles.length;
 
-    req.session.currentIndex = currentIndex;
+//     req.session.currentIndex = currentIndex;
 
-    res.render("exampaper", { images: imageFiles, currentIndex });
-});
+//     res.render("exampaper", { images: imageFiles, currentIndex });
+// });
 
 app.post("/next", (req, res) => {
     const imageFiles = fs.readdirSync("./public/uploads/");
@@ -907,17 +954,17 @@ app.put('/testmaster/api/questionpapers/:questionPaperId', async (req, res) => {
     }
 });
 
-app.delete('/testmaster/api/questionpapers/:questionPaperId',async (req, res) => {
-    try{
+app.delete('/testmaster/api/questionpapers/:questionPaperId', async (req, res) => {
+    try {
         const questionPaperId = req.params.questionPaperId;
 
         const deletedQuestionPaper = await QuestionPaper.findByIdAndDelete(questionPaperId);
 
-        if(!deletedQuestionPaper){
+        if (!deletedQuestionPaper) {
             return res.status(404).send('Question Paper not found');
         }
         res.status(204).send();
-    }catch (error) {
+    } catch (error) {
         console.error('Error deleting question paper:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }

@@ -129,11 +129,34 @@
 
         const questionData = <%- JSON.stringify(questionData) %>;
 
+        const receivedTime = <%= time %>;
+        const receivedTestName = '<%= testName %>';
+        const receivedName = '<%= candidateName  %>';
+        const examDate = '<%= candidateExamDate %>';
+        console.log(formatDateToDDMMYYYY(examDate));
+        const timeInSeconds = receivedTime * 60;
+
+        function formatDateToDDMMYYYY(examDate) {
+            const date = new Date(examDate);
+
+            // Get day, month, and year components
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are zero-based
+            const year = date.getFullYear();
+
+            // Format as 'dd/mm/yyyy'
+            return `${day}/${month}/${year}`;
+        }
+
+        
+       
+
+
         // Extract questionIds from questionData
         const questionIds = questionData.map(question => question.questionId);
 
         const totalImages = questionData.length;
-        console.log(questionData)
+        
 
 
         function updateImage() {
@@ -146,12 +169,12 @@
 
         async function sendResponsesToServer() {
             try {
-                const testName = 'java';
-                const name = 'algodomain';
+                const testName = receivedTestName;
+                const name = receivedName;
                 const emailId = localStorage.getItem("userEmail");
                 console.log(emailId);
-                const testDate = new Date();
-                const testDuration = '30 min';
+                const testDate = formatDateToDDMMYYYY(examDate);
+                const testDuration = `${receivedTime}min`;
                 const startTime = localStorage.getItem('startTime');
                 const endTime = new Date().getTime();
                 const responsesArray = Object.entries(responses).map(([index, selectedOptions]) => ({
@@ -344,7 +367,7 @@
             function updateTimer() {
                 const currentTime = new Date().getTime();
                 const elapsedSeconds = Math.floor((currentTime - startTime) / 1000);
-                const remainingSeconds = Math.max(60 - elapsedSeconds, 0);
+                const remainingSeconds = Math.max(timeInSeconds - elapsedSeconds, 0);
 
                 const minutes = Math.floor(remainingSeconds / 60);
                 const seconds = remainingSeconds % 60;
@@ -376,7 +399,7 @@
                 localStorage.removeItem('startTime');
                 localStorage.removeItem('userEmail');
                 // Redirect to a thank-you page or perform any other desired action
-                 window.location.href = '/thank-you';
+                window.location.href = '/thank-you';
             }
         }
 
