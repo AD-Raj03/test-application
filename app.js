@@ -591,15 +591,24 @@ app.get("/thank-you", (req, res) => {
 
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
+    // const user = await User.findOne({ username, password });
 
-    const user = await User.findOne({ username, password });
-
-    if (user) {
-        res.render("upload");
-    } else {
+    // if (user) {
+    //     res.render("upload");
+    // } else {
+    //     res
+    //         .status(401)
+    //         .json({ success: false, message: "Invalid username or password" });
+    // }
+    if(username === "hr@algodomain.com" && password === "hr123"){
+        var token = jwt.sign({ email: username }, 'algo');
         res
-            .status(401)
-            .json({ success: false, message: "Invalid username or password" });
+        .status(200)
+        .send({ success: true, message: "successfully logged-in", token });
+    }else{
+        res
+        .status(401)
+        .send({ success: false, message: "Invalid username or password" });
     }
 });
 
