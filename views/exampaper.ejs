@@ -89,7 +89,7 @@
                 <h6 id="attemptedCounter">Attempted Questions: 0 / 0</h6>
                 <h6>Remaining Time</h6>
                 <p id="timer">Timer: 0 seconds</p>
-                <form id="nextForm" action="http://localhost:3000/next" method="POST">
+                <form id="nextForm" action="http://testmaster.algodomain.in/next" method="POST">
                     <button type="submit" id="nextButton" class="btn btn-primary btn-block mb-2">
                         Next
                     </button>
@@ -145,7 +145,7 @@
 
         async function fetchQuestions() {
             try {
-                const response = await fetch('http://localhost:3000/questions');
+                const response = await fetch('http://testmaster.algodomain.in/questions');
                 const data = await response.json();
 
                 if (data.success) {
@@ -176,7 +176,7 @@
                     selectedOptions,
                 }));
 
-                const response = await fetch('http://localhost:3000/testmaster/api/save-response', {
+                const response = await fetch('http://testmaster.algodomain.in/testmaster/api/save-response', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

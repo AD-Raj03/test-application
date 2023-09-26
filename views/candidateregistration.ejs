@@ -67,7 +67,7 @@
             const email = document.getElementById("email").value;
             const examDate = document.getElementById("examDate").value;
 
-            fetch(`http://localhost:3000/testmaster/api/candidates/${questionPaperIdfrom}`, {
+            fetch(`http://testmaster.algodomain.in/testmaster/api/candidates/${questionPaperIdfrom}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

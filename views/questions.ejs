@@ -204,7 +204,7 @@
       // };
       // Send a POST request to update the question paper with the selected question IDs
       fetch(
-        `http://localhost:3000/testmaster/api/questionpapers/${questionPaperId}`,
+        `http://testmaster.algodomain.in/testmaster/api/questionpapers/${questionPaperId}`,
         {
           method: "PUT",
           headers: {
@@ -246,7 +246,7 @@
       );
       if (confirmed) {
         fetch(
-          `http://localhost:3000/testmaster/api/questions/${questionId}`,
+          `http://testmaster.algodomain.in/testmaster/api/questions/${questionId}`,
           {
             method: "DELETE",
           }

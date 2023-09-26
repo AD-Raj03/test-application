@@ -11,6 +11,8 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const app = express();
 const port = process.env.PORT || 3000;
+const jwt = require('jsonwebtoken');
+const secret = 'algodomainsolutions';
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -36,15 +38,15 @@ const { google } = require('googleapis');
 const { OAuth2Client } = require('google-auth-library');
 
 // Replace with your client ID and client secret
-const CLIENT_ID = "";
-const CLIENT_SECRET = "";
-const REDIRECT_URI = 'http://localhost:3000/auth/gmail/callback'; // Should match the one you configured in the Cloud Console
+const CLIENT_ID = "936553315585-vppekfie21sb64ea89it57lcogdn8cqn.apps.googleusercontent.com";
+const CLIENT_SECRET = "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";
+const REDIRECT_URI = 'http://testmaster.algodomain.in/auth/gmail/callback'; // Should match the one you configured in the Cloud Console
 
 const oauth2Client = new OAuth2Client(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 
 oauth2Client.setCredentials({
-    access_token: '',
-    refresh_token: '',
+    access_token: 'ya29.a0AfB_byBb0hF9j3qRTXp0Aint3yRPamweetReB7kqejU9DJXTaGlQZ9fTmcEvwP8GPFTDSKX3_urvaDswGAHx72VsVID2aTECg2x50JUmXfAIUhzXUJJvYnuNcXJ6GMecdnxV0yJSmBdCc9PNImwxIgn8c0hbvkVNKCeoWAaCgYKAWMSARMSFQGOcNnCLBMmXPt9joH0UYN37BBohg0173',
+    refresh_token: '1//0gkXSXYKa5xuoCgYIARAAGBASNwF-L9Ir-v8YtJxkAHVkcxlCZ6R85p66vA3SKP2QBRA_AUQlnv_Out244NFUwPr2hMHfOlp8TqM',
   });
 
 const gmail = google.gmail({
@@ -216,10 +218,7 @@ app.post('/testmaster/api/exam', async (req, res) => {
             securityCode,
             isActive: true, // Make sure the candidate is active
         });
-        if (candidate) {
-            console.log('verified')
-            console.log(candidate)
-        }
+       
 
         const candidateName = candidate.name;
         const candidateExamDate = candidate.examDate;
@@ -310,7 +309,7 @@ app.post("/testmaster/api/candidates/:questionPaperId", async (req, res) => {
             const message = `To: ${email}\r\n` +
               'Subject: Assessment Test \r\n' +
               'Content-Type: text/plain; charset=UTF-8\r\n\r\n' +
-              `Test Link : http://localhost:3000/testmaster/exam  , Email: ${email}  , SecurityCode: ${securityCode}`;
+              `Test Link : http://testmaster.algodomain.in/testmaster/exam  , Email: ${email}  , SecurityCode: ${securityCode}`;
           
             try {
               const response = await gmail.users.messages.send({
@@ -438,7 +437,7 @@ app.post("/testmaster/api/save-response", async (req, res) => {
         const wrongCount = attemptedQuestion - correctCount;
         const skippedQuestions = totalQuestion - attemptedQuestion;
         let result = '';
-        if (correctCount >= 2) {
+        if (correctCount >= 2) {    ///// this need to be change
             result = 'Pass';
         } else {
             result = 'fail';
@@ -702,7 +701,7 @@ app.post('/testmaster/api/update-question/:questionId', upload.single("image"), 
         }
 
 
-        res.status(200).json({ success: true, message: 'Question updated successfully', updatedQuestion });
+        res.redirect('/questions-list');
     } catch (error) {
         console.error('Error updating question:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });

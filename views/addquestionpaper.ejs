@@ -99,7 +99,7 @@
         //         const questionIds = savedSelectedQuestionIds.join(',');
 
         //         // Make an HTTP GET request to your API
-        //         fetch(`http://localhost:3000/api/questions-by-ids?questionIds=${questionIds}`)
+        //         fetch(`http://testmaster.algodomain.in/api/questions-by-ids?questionIds=${questionIds}`)
         //             .then((response) => response.json())
         //             .then((data) => {
         //                 // Render the data in the table
@@ -159,7 +159,7 @@
                 minimumNumberForPassing,
             };
 
-            fetch("http://localhost:3000/testmaster/api/questionpapers", {
+            fetch("http://testmaster.algodomain.in/testmaster/api/questionpapers", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

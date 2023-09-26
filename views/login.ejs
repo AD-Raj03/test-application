@@ -37,28 +37,28 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
         // JavaScript validation
-        $(document).ready(function () {
-            $("#loginForm").submit(function (event) {
-                event.preventDefault();
-                var username = $("#username").val();
-                var password = $("#password").val();
+        // $(document).ready(function () {
+        //     $("#loginForm").submit(function (event) {
+        //         event.preventDefault();
+        //         var username = $("#username").val();
+        //         var password = $("#password").val();
 
-                // Add your validation logic here (e.g., checking username and password)
-                if (username === "yourUsername" && password === "yourPassword") {
-                    alert("Login successful!");
-                    // Redirect to the desired page
-                    // window.location.href = "dashboard.html";
-                } else {
-                    alert("Invalid username or password. Please try again.");
-                }
-            });
+        //         // Add your validation logic here (e.g., checking username and password)
+        //         if (username === "yourUsername" && password === "yourPassword") {
+        //             alert("Login successful!");
+        //             // Redirect to the desired page
+        //             // window.location.href = "dashboard.html";
+        //         } else {
+        //             alert("Invalid username or password. Please try again.");
+        //         }
+        //     });
 
-            $("#forgotPassword").click(function (event) {
-                event.preventDefault();
-                // Add logic to handle forgotten password (e.g., show a modal or redirect to a password reset page)
-                alert("Forgot Password clicked!");
-            });
-        });
+        //     $("#forgotPassword").click(function (event) {
+        //         event.preventDefault();
+        //         // Add logic to handle forgotten password (e.g., show a modal or redirect to a password reset page)
+        //         alert("Forgot Password clicked!");
+        //     });
+        // });
     </script>
 </body>
 </html>
